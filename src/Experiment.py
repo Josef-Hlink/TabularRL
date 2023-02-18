@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Practical for course 'Reinforcement Learning',
-Leiden University, The Netherlands
-By Thomas Moerland
-"""
 
+from typing import Optional
 import numpy as np
 import time
 
@@ -15,10 +11,22 @@ from MonteCarlo_solution import monte_carlo
 from Nstep_solution import n_step_Q
 from Helper import LearningCurvePlot, smooth
 
-def average_over_repetitions(backup, n_repetitions, n_timesteps, max_episode_length, learning_rate, gamma, policy='egreedy', 
-                    epsilon=None, temp=None, smoothing_window=51, plot=False, n=5):
+def average_over_repetitions(
+    backup: str,
+    n_repetitions: int,
+    n_timesteps: int,
+    max_episode_length: int,
+    learning_rate: float,
+    gamma: float,
+    policy: str = 'egreedy',
+    epsilon: Optional[float] = None,
+    temp: Optional[float] = None,
+    smoothing_window: int = 51,
+    plot: bool = False,
+    n: int = 5
+    ) -> np.ndarray:
 
-    reward_results = np.empty([n_repetitions,n_timesteps]) # Result array
+    reward_results = np.empty([n_repetitions, n_timesteps]) # Result array
     now = time.time()
     
     for rep in range(n_repetitions): # Loop over repetitions
@@ -35,7 +43,7 @@ def average_over_repetitions(backup, n_repetitions, n_timesteps, max_episode_len
 
         reward_results[rep] = rewards
         
-    print('Running one setting takes {} minutes'.format((time.time()-now)/60))    
+    print(f'Running one setting takes {(time.time()-now)/60} minutes')
     learning_curve = np.mean(reward_results,axis=0) # average over repetitions
     learning_curve = smooth(learning_curve,smoothing_window) # additional smoothing
     return learning_curve  

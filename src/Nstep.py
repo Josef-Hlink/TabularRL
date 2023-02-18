@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Practical for course 'Reinforcement Learning',
-Leiden University, The Netherlands
-2021
-By Thomas Moerland
-"""
 
 import numpy as np
 from Environment import StochasticWindyGridworld
 from Helper import softmax, argmax
+
 
 class NstepQLearningAgent:
 

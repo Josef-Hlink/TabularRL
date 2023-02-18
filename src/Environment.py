@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Practical for course 'Reinforcement Learning',
-Leiden University, The Netherlands
-By Thomas Moerland
-"""
+
+from typing import Optional
 import matplotlib
-matplotlib.use('Qt5Agg') # 'TkAgg'
+# matplotlib.use('Qt5Agg') # 'TkAgg'
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle,Circle,Arrow
@@ -17,21 +14,21 @@ class StochasticWindyGridworld:
         Compared to the book version, the vertical wind is now stochastic, and only blows 80% of times
     '''
     
-    def __init__(self,initialize_model=True):
+    def __init__(self, initialize_model: bool = True) -> None:
         self.height = 7 # 7
         self.width = 10 # 10
         self.shape = (self.width, self.height)
         self.n_states = self.height * self.width
         self.n_actions = 4
         self.action_effects = {
-                0: (0, 1),  # up
-                1: (1, 0),   # right
-                2: (0, -1),   # down
-                3: (-1, 0),  # left
-                }
-        self.start_location = (0,3)
-        self.winds = (0,0,0,1,1,1,2,2,1,0)
-        self.wind_blows_proportion = 0.8         
+            0: (0, 1),   # up
+            1: (1, 0),   # right
+            2: (0, -1),  # down
+            3: (-1, 0),  # left
+        }
+        self.start_location = (0, 3)
+        self.winds = (0, 0, 0, 1, 1, 1, 2, 2, 1, 0)
+        self.wind_blows_proportion = 0.8 # 80% of times the wind blows
 
         self.reward_per_step = -1.0 # default reward on every step that does not reach a goal
         self.goal_locations = [[7,3]] # [[6,2]] a vector specifying the goal locations in [[x1,y1],[x2,y2]] format
@@ -56,7 +53,7 @@ class StochasticWindyGridworld:
         s = self._location_to_state(self.agent_location)
         return s
     
-    def step(self,a):
+    def step(self, a: int) -> tuple[int, float, bool]:
         ''' Forward the environment based on action a, really affecting the agent location  
         Returns the next state, the obtained reward, and a boolean whether the environment terminated '''
         self.agent_location += self.action_effects[a] # effect of action
@@ -87,7 +84,12 @@ class StochasticWindyGridworld:
             raise ValueError("set initialize_model=True when creating Environment")
             
 
-    def render(self,Q_sa=None,plot_optimal_policy=False,step_pause=0.001):
+    def render(
+        self,
+        Q_sa: Optional[np.ndarray] = None,
+        plot_optimal_policy: bool = False,
+        step_pause: float = 0.001
+        ) -> None:
         ''' Plot the environment 
         if Q_sa is provided, it will also plot the Q(s,a) values for each action in each state
         if plot_optimal_policy=True, it will additionally add an arrow in each state to indicate the greedy action '''
@@ -115,15 +117,15 @@ class StochasticWindyGridworld:
         # Draw figure
         plt.pause(step_pause)    
 
-    def _state_to_location(self,state):
+    def _state_to_location(self, state: int) -> np.ndarray:
         ''' bring a state index to an (x,y) location of the agent '''
         return np.array(np.unravel_index(state,self.shape))
     
-    def _location_to_state(self,location):
+    def _location_to_state(self, location: np.ndarray) -> int:
         ''' bring an (x,y) location of the agent to a state index '''
         return np.ravel_multi_index(location,self.shape)
         
-    def _construct_model(self):
+    def _construct_model(self) -> None:
         ''' Constructs full p(s'|s,a) and r(s,a,s') arrays
             Stores these in self.p_sas and self.r_sas '''
             
@@ -173,7 +175,7 @@ class StochasticWindyGridworld:
         return 
 
     def _initialize_plot(self):
-        self.fig,self.ax = plt.subplots()#figsize=(self.width, self.height+1)) # Start a new figure
+        self.fig,self.ax = plt.subplots() #figsize=(self.width, self.height+1)) # Start a new figure
         self.ax.set_xlim([0,self.width])
         self.ax.set_ylim([0,self.height]) 
         self.ax.axes.xaxis.set_visible(False)
@@ -208,7 +210,7 @@ class StochasticWindyGridworld:
         self.agent_circle = Circle(self.agent_location+0.5,0.3)
         self.ax.add_patch(self.agent_circle)
         
-    def _initialize_Q_labels(self):
+    def _initialize_Q_labels(self) -> None:
         self.Q_labels = []
         for state in range(self.n_states):
             state_location = self._state_to_location(state)
@@ -218,7 +220,7 @@ class StochasticWindyGridworld:
                 next_label = self.ax.text(plot_location[0],plot_location[1]+0.03,0.0,fontsize=8)
                 self.Q_labels[state].append(next_label)
 
-    def _plot_arrows(self,Q_sa):
+    def _plot_arrows(self, Q_sa) -> None:
         if self.arrows is not None: 
             for arrow in self.arrows:
                 arrow.remove() # Clear all previous arrows
@@ -232,14 +234,14 @@ class StochasticWindyGridworld:
                 ax_arrow = self.ax.add_patch(new_arrow)
                 self.arrows.append(ax_arrow)
 
-def full_argmax(x):
+def full_argmax(x: np.ndarray) -> np.ndarray:
     ''' Own variant of np.argmax, since np.argmax only returns the first occurence of the max '''
     return np.where(x == np.max(x))[0]            
 
 def test():
     # Hyperparameters
     n_test_steps = 25
-    step_pause = 0.5
+    step_pause = 5
     
     # Initialize environment and Q-array
     env = StochasticWindyGridworld()
