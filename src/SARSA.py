@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from typing import Optional
 import numpy as np
 from Environment import StochasticWindyGridworld
 from Helper import softmax, argmax
@@ -8,54 +9,107 @@ from Helper import softmax, argmax
 
 class SarsaAgent:
 
-    def __init__(self, n_states, n_actions, learning_rate, gamma):
+    def __init__(
+        self,
+        n_states: int,
+        n_actions: int,
+        learning_rate: float = 0.1,
+        gamma: float = 1.0
+        ) -> None:
+        ''' Initialize the SARSA agent '''
         self.n_states = n_states
         self.n_actions = n_actions
         self.learning_rate = learning_rate
         self.gamma = gamma
-        self.Q_sa = np.zeros((n_states,n_actions))
+        self.Q_sa = np.zeros((n_states, n_actions))
         
-    def select_action(self, s, policy='egreedy', epsilon=None, temp=None):
+    def select_action(
+        self,
+        s: int,
+        policy: str = 'egreedy',
+        epsilon: Optional[float] = None,
+        temp: Optional[float] = None
+        ) -> int:
         
         if policy == 'egreedy':
             if epsilon is None:
-                raise KeyError("Provide an epsilon")
-                
-            # TO DO: Add own code
-            a = np.random.randint(0,self.n_actions) # Replace this with correct action selection
-            
-                
+                raise ValueError("Provide an epsilon")
+            a = self.select_egreedy_action(s, epsilon)
         elif policy == 'softmax':
             if temp is None:
-                raise KeyError("Provide a temperature")
-                
-            # TO DO: Add own code
-            a = np.random.randint(0,self.n_actions) # Replace this with correct action selection
-            
+                raise ValueError("Provide a temperature")
+            a = self.select_softmax_action(s, temp)
+        else:
+            raise ValueError("Unknown policy, please use egreedy or softmax")
+        
         return a
-        
-    def update(self,s,a,r,s_next,a_next,done):
-        # TO DO: Add own code
-        pass
-        
-def sarsa(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None, temp=None, plot=True):
+
+    def select_egreedy_action(
+        self,
+        s: int,
+        epsilon: float
+        ) -> int:
+        ''' Returns an action according to the epsilon-greedy policy '''
+        greedy_a = argmax(self.Q_sa[s])
+        if np.random.uniform() < epsilon:
+            explore_a = np.random.randint(0, self.n_actions)
+            while explore_a == greedy_a:
+                explore_a = np.random.randint(0, self.n_actions)
+            return explore_a
+        return greedy_a
+    
+    def select_softmax_action(
+        self,
+        s: int,
+        temp: float
+        ) -> int:
+        ''' Returns an action according to the softmax policy '''
+        return np.random.choice(self.n_actions, p=softmax(self.Q_sa[s], temp))
+
+    def update(self, s : int, a: int, r: int, s_: int, a_: int, done: bool = False) -> None:
+        ''' Tabular SARSA update '''
+        G = r + self.gamma * np.max(self.Q_sa[s_]) * (1 - done)
+        self.Q_sa[s,a] += self.learning_rate * (G - self.Q_sa[s,a])
+        return None
+
+
+def sarsa(
+    n_timesteps: int,
+    learning_rate: float,
+    gamma: float,
+    policy: str = 'egreedy',
+    epsilon: Optional[float] = None,
+    temp: Optional[float] = None,
+    plot: bool = True
+    ) -> np.ndarray:
     ''' runs a single repetition of SARSA
     Return: rewards, a vector with the observed rewards at each timestep ''' 
-    
+
     env = StochasticWindyGridworld(initialize_model=False)
     pi = SarsaAgent(env.n_states, env.n_actions, learning_rate, gamma)
-    rewards = []
+    rewards = np.zeros(n_timesteps)
 
-    # TO DO: Write your SARSA algorithm here!
+    s = env.reset()
+    a = pi.select_action(s, policy, epsilon, temp)
+    for t in range(n_timesteps):
+        s_, r, done = env.step(a)
+        a_ = pi.select_action(s_, policy, epsilon, temp)
+        pi.update(s, a, r, s_, a_, done)
+        s, a = s_, a_
+        rewards[t] = r
+        if done:
+            s = env.reset()
+            a = pi.select_action(s, policy, epsilon, temp)
     
-    # if plot:
-    #    env.render(Q_sa=pi.Q_sa,plot_optimal_policy=True,step_pause=0.1) # Plot the Q-value estimates during SARSA execution
+        # if plot:
+        #     # Plot the Q-value estimates during Q-learning execution
+        #     env.render(pi.Q_sa, plot_optimal_policy = True, step_pause = 0.1)
 
     return rewards 
 
 
 def test():
-    n_timesteps = 1000
+    n_timesteps = 10000
     gamma = 1.0
     learning_rate = 0.1
 
@@ -65,10 +119,13 @@ def test():
     temp = 1.0
     
     # Plotting parameters
-    plot = True
+    plot = False
+    # plot = True
 
     rewards = sarsa(n_timesteps, learning_rate, gamma, policy, epsilon, temp, plot)
-    print("Obtained rewards: {}".format(rewards))        
-    
+    print('Number of times reached goal:', np.sum(rewards == 40))      
+
+
+
 if __name__ == '__main__':
     test()

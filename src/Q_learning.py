@@ -21,7 +21,7 @@ class QLearningAgent:
         self.n_actions = n_actions
         self.learning_rate = learning_rate
         self.gamma = gamma
-        self.Q_sa = np.zeros((n_states,n_actions))
+        self.Q_sa = np.zeros((n_states, n_actions))
         
     def select_action(
         self,
@@ -81,7 +81,7 @@ def q_learning(
     temp: Optional[float] = None,
     plot: bool = True
     ) -> np.ndarray:
-    ''' runs a single repetition of q_learning
+    ''' runs a single repetition of Q-learning
     Return: rewards, a vector with the observed rewards at each timestep ''' 
     
     env = StochasticWindyGridworld(initialize_model = False)
@@ -99,7 +99,8 @@ def q_learning(
             s = env.reset()
     
         if plot:
-            env.render(Q_sa=pi.Q_sa,plot_optimal_policy=True,step_pause=0.1) # Plot the Q-value estimates during Q-learning execution
+            # Plot the Q-value estimates during Q-learning execution
+            env.render(pi.Q_sa, plot_optimal_policy = True, step_pause = 0.1)
 
     return rewards 
 
@@ -115,10 +116,12 @@ def test():
     temp = 1.0
     
     # Plotting parameters
-    plot = True
+    plot = False
+    # plot = True
 
     rewards = q_learning(n_timesteps, learning_rate, gamma, policy, epsilon, temp, plot)
     print('Number of times reached goal:', np.sum(rewards == 40))
+
 
 if __name__ == '__main__':
     test()
