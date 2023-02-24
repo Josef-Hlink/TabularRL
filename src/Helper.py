@@ -27,24 +27,24 @@ class LearningCurvePlot:
         self.ax.set_ylim([lower,upper])
 
     def add_hline(self, height: float, label: str) -> None:
-        self.ax.axhline(height,ls='--',c='k',label=label)
+        self.ax.axhline(height, ls = '--', c = 'k', label = label)
 
     def save(self, name: str = 'test.png') -> None:
         ''' name: string for filename of saved figure '''
         self.ax.legend()
-        self.fig.savefig(name,dpi=300)
+        self.fig.savefig(f'../plots/{name}', dpi = 500)
 
 def smooth(y: np.ndarray, window: int, poly: int = 1) -> np.ndarray:
     '''
     y: vector to be smoothed 
     window: size of the smoothing window '''
-    return savgol_filter(y,window,poly)
+    return savgol_filter(y, window, poly)
 
 def softmax(x: np.ndarray, temp: float) -> np.ndarray:
     ''' Computes the softmax of vector x with temperature parameter 'temp' '''
     x = x / temp # scale by temperature
     z = x - max(x) # substract max to prevent overflow of softmax 
-    return np.exp(z)/np.sum(np.exp(z)) # compute softmax
+    return np.exp(z) / np.sum(np.exp(z)) # compute softmax
 
 def argmax(x: np.ndarray) -> int:
     ''' Own variant of np.argmax with random tie breaking '''
@@ -70,7 +70,7 @@ def linear_anneal(t: int, T: int, start: float, final: float, percentage: float)
 if __name__ == '__main__':
     # Test Learning curve plot
     x = np.arange(100)
-    y = 0.01*x + np.random.rand(100) - 0.4 # generate some learning curve y
+    y = 0.01 * x + np.random.rand(100) - 0.4 # generate some learning curve y
     LCTest = LearningCurvePlot(title="Test Learning Curve")
     LCTest.add_curve(y,label='method 1')
     LCTest.add_curve(smooth(y,window=35),label='method 1 smoothed')

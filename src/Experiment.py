@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from functools import partial
 from typing import Optional
 import numpy as np
 import time
 
-from Q_learning_solution import q_learning
-from SARSA_solution import sarsa
-from MonteCarlo_solution import monte_carlo
-from Nstep_solution import n_step_Q
+from DynamicProgramming import experiment as dp_experiment
+from Q_learning import q_learning
+from SARSA import sarsa
+from MonteCarlo import monte_carlo
+from Nstep import n_step_Q
 from Helper import LearningCurvePlot, smooth
 
 def average_over_repetitions(
@@ -25,113 +27,119 @@ def average_over_repetitions(
     plot: bool = False,
     n: int = 5
     ) -> np.ndarray:
-
-    reward_results = np.empty([n_repetitions, n_timesteps]) # Result array
-    now = time.time()
+    ''' Runs the specified algorithm multiple times and returns the average learning curve '''
+    onestep_args = [n_timesteps, learning_rate, gamma, policy, epsilon, temp, plot]
+    nstep_args = [n_timesteps, max_episode_length, learning_rate, gamma, policy, epsilon, temp, plot]
+    algorithms = {
+        'q': (q_learning, onestep_args),
+        'sarsa': (sarsa, onestep_args),
+        'mc': (monte_carlo, nstep_args),
+        'nstep': (n_step_Q, nstep_args + [n])
+    }
+    reward_results = np.empty([n_repetitions, n_timesteps])
     
-    for rep in range(n_repetitions): # Loop over repetitions
-        if backup == 'q':
-            rewards = q_learning(n_timesteps, learning_rate, gamma, policy, epsilon, temp, plot)
-        elif backup == 'sarsa':
-            rewards = sarsa(n_timesteps, learning_rate, gamma, policy, epsilon, temp, plot)
-        elif backup == 'mc':
-            rewards = monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma, 
-                   policy, epsilon, temp, plot)
-        elif backup == 'nstep':
-            rewards = n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma, 
-                   policy, epsilon, temp, plot, n=n)
+    start = time.time()
+    for rep in range(n_repetitions):
 
+        algorithm, args = algorithms[backup]
+        rewards = algorithm(*args)
         reward_results[rep] = rewards
-        
-    print(f'Running one setting takes {(time.time()-now)/60} minutes')
-    learning_curve = np.mean(reward_results,axis=0) # average over repetitions
-    learning_curve = smooth(learning_curve,smoothing_window) # additional smoothing
+    
+    print(f'backup: {backup}, policy: {policy}, epsilon: {epsilon}, temp: {temp}, lr: {learning_rate}')
+    print(f'time: {time.strftime("%M:%S", time.gmtime(time.time() - start))}')
+    learning_curve = np.mean(reward_results, axis = 0)
+    learning_curve = smooth(learning_curve, smoothing_window)
     return learning_curve  
 
 def experiment():
     ####### Settings
-    # Experiment    
-    n_repetitions = 10
-    smoothing_window = 1001
-    plot = False # Plotting is very slow, switch it off when we run repetitions
-    
-    # MDP    
-    n_timesteps = 50000
-    max_episode_length = 150
-    gamma = 1.0
 
-    # Parameters we will vary in the experiments, set them to some initial values: 
-    # Exploration
-    policy = 'egreedy' # 'egreedy' or 'softmax' 
-    epsilon = 0.05
-    temp = 1.0
-    # Back-up & update
-    backup = 'q' # 'q' or 'sarsa' or 'mc' or 'nstep'
-    learning_rate = 0.25
-    n = 5 # only used when backup = 'nstep'
-        
-    # Nice labels for plotting
-    backup_labels = {'q': 'Q-learning',
-                  'sarsa': 'SARSA',
-                  'mc': 'Monte Carlo',
-                  'nstep': 'n-step Q-learning'}
-    
+    backup_labels = {
+        'q': 'Q-learning',
+        'sarsa': 'SARSA',
+        'mc': 'Monte Carlo',
+        'nstep': 'n-step Q-learning'
+    }
+
+    run_repetitions = partial(
+        average_over_repetitions,
+        n_repetitions = 5, #10
+        n_timesteps = 50000, #50000
+        max_episode_length = 150,
+        gamma = 1.0,
+        smoothing_window = 1001,
+        plot = False,
+        learning_rate = 0.25,
+        policy = 'egreedy',
+        epsilon = 0.1,
+        temp = None,
+        n = 5
+    )
+
     ####### Experiments
     
-    #### Assignment 1: Dynamic Programming
-    # Execute this assignment in DynamicProgramming.py
-    optimal_average_reward_per_timestep = 1.3 # set the optimal average reward per timestep you found in the DP assignment here
-    
-    #### Assignment 2: Effect of exploration
-    policy = 'egreedy'
-    epsilons = [0.02,0.1,0.3]
-    learning_rate = 0.25
-    backup = 'q'
+    ###### Assignment 1: Dynamic Programming
+    r_avg_opt = dp_experiment(verbose = False)
+
+    ###### Assignment 2: Effect of exploration
     Plot = LearningCurvePlot(title = 'Exploration: $\epsilon$-greedy versus softmax exploration')    
-    for epsilon in epsilons:        
-        learning_curve = average_over_repetitions(backup, n_repetitions, n_timesteps, max_episode_length, learning_rate, 
-                                              gamma, policy, epsilon, temp, smoothing_window, plot, n)
-        Plot.add_curve(learning_curve,label=r'$\epsilon$-greedy, $\epsilon $ = {}'.format(epsilon))    
-    policy = 'softmax'
-    temps = [0.01,0.1,1.0]
-    for temp in temps:
-        learning_curve = average_over_repetitions(backup, n_repetitions, n_timesteps, max_episode_length, learning_rate, 
-                                              gamma, policy, epsilon, temp, smoothing_window, plot, n)
-        Plot.add_curve(learning_curve,label=r'softmax, $ \tau $ = {}'.format(temp))
-    Plot.add_hline(optimal_average_reward_per_timestep, label="DP optimum")
+    for epsilon in [0.02, 0.1, 0.3]:
+        Plot.add_curve(
+            y = run_repetitions(
+                backup = 'q',
+                learning_rate = 0.25,
+                policy = 'egreedy',
+                epsilon = epsilon,
+                temp = None
+            ),
+            label = rf'$\epsilon$-greedy, $\epsilon $ = {epsilon}'
+        )
+    for temp in [0.01, 0.1, 1.0]:
+        Plot.add_curve(
+            y = run_repetitions(
+                backup = 'q',
+                learning_rate = 0.25,
+                policy = 'softmax',
+                epsilon = None,
+                temp = temp
+            ),
+            label = rf'softmax, $ \tau $ = {temp}'
+            )
+    Plot.add_hline(r_avg_opt, label = 'DP optimum')
     Plot.save('exploration.png')
     
     ###### Assignment 3: Q-learning versus SARSA
-    policy = 'egreedy'
-    epsilon = 0.1 # set epsilon back to original value 
-    learning_rates = [0.02,0.1,0.4]
-    backups = ['q','sarsa']
     Plot = LearningCurvePlot(title = 'Back-up: on-policy versus off-policy')    
-    for backup in backups:
-        for learning_rate in learning_rates:
-            learning_curve = average_over_repetitions(backup, n_repetitions, n_timesteps, max_episode_length, learning_rate, 
-                                                  gamma, policy, epsilon, temp, smoothing_window, plot, n)
-            Plot.add_curve(learning_curve,label=r'{}, $\alpha$ = {} '.format(backup_labels[backup],learning_rate))
-    Plot.add_hline(optimal_average_reward_per_timestep, label="DP optimum")
+    for backup in ['q', 'sarsa']:
+        for learning_rate in [0.02, 0.1, 0.4]:
+            Plot.add_curve(
+                y = run_repetitions(
+                    backup = backup,
+                    learning_rate = learning_rate,
+                    policy = 'egreedy',
+                    epsilon = 0.1,
+                    temp = None
+                ),
+                label = rf'{backup_labels[backup]}, $\alpha$ = {learning_rate}'
+            )
+    Plot.add_hline(r_avg_opt, label = 'DP optimum')
     Plot.save('on_off_policy.png')
     
-    # ##### Assignment 4: Back-up depth
-    policy = 'egreedy'
-    epsilon = 0.1 # set epsilon back to original value
-    learning_rate = 0.25
-    backup = 'nstep'
-    ns = [1,3,10,30]
+    ###### Assignment 4: Back-up depth
     Plot = LearningCurvePlot(title = 'Back-up: depth')    
-    for n in ns:
-        learning_curve = average_over_repetitions(backup, n_repetitions, n_timesteps, max_episode_length, learning_rate, 
-                                              gamma, policy, epsilon, temp, smoothing_window, plot, n)
-        Plot.add_curve(learning_curve,label=r'{}-step Q-learning'.format(n))
+    for n in [1, 3, 10, 30]:
+        Plot.add_curve(
+            y = run_repetitions(backup = 'nstep', n = n),
+            label = rf'{n}-step Q-learning'
+        )
     backup = 'mc'
-    learning_curve = average_over_repetitions(backup, n_repetitions, n_timesteps, max_episode_length, learning_rate, 
-                                          gamma, policy, epsilon, temp, smoothing_window, plot, n)
-    Plot.add_curve(learning_curve,label='Monte Carlo')        
-    Plot.add_hline(optimal_average_reward_per_timestep, label="DP optimum")
+    Plot.add_curve(
+        y = run_repetitions(backup = 'mc'),
+        label = 'Monte Carlo'
+    )
+    Plot.add_hline(r_avg_opt, label = 'DP optimum')
     Plot.save('depth.png')
+
 
 if __name__ == '__main__':
     experiment()

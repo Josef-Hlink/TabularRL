@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from functools import lru_cache
 import numpy as np
 from Environment import StochasticWindyGridworld
 from Helper import argmax
@@ -41,7 +42,8 @@ class QValueIterationAgent:
 def Q_value_iteration(
     env: StochasticWindyGridworld,
     gamma: float = 1.0,
-    threshold: float = 0.001
+    threshold: float = 0.001,
+    verbose: bool = False
     ) -> QValueIterationAgent:
     ''' Runs Q-value iteration. Returns a converged QValueIterationAgent object '''
     
@@ -56,20 +58,27 @@ def Q_value_iteration(
                 QVIagent.update(s, a, env.p_sas, env.r_sas)
                 delta = max(delta, abs(x - QVIagent.Q_sa[s, a]))
         if delta < threshold or i > 1000:
-            print('Converged')
+            if verbose:
+                print('Converged')
             break
-        env.render(Q_sa = QVIagent.Q_sa, plot_optimal_policy = True, step_pause = 0.2)
-        print(f'i = {i}, Δ = {delta:.3f}')
+        if verbose:
+            env.render(Q_sa = QVIagent.Q_sa, plot_optimal_policy = True, step_pause = 0.2)
+            print(f'i = {i}, Δ = {delta:.3f}')
         i += 1
+    
      
     return QVIagent
 
-def experiment():
+@lru_cache
+def experiment(verbose: bool = False):
+    np.random.seed(42)
     gamma = 1.0
     threshold = 0.001
     env = StochasticWindyGridworld(initialize_model = True)
-    env.render()
-    QVIagent = Q_value_iteration(env, gamma, threshold)
+    if verbose:
+        env.render()
+    QVIagent = Q_value_iteration(env, gamma, threshold, verbose)
+    rewards = []
     
     # View optimal policy
     done = False
@@ -77,11 +86,13 @@ def experiment():
     while not done:
         a = QVIagent.select_action(s)
         s_next, r, done = env.step(a)
-        env.render(Q_sa = QVIagent.Q_sa, plot_optimal_policy = True, step_pause = 0.5)
+        rewards.append(r)
         s = s_next
 
-    # TO DO: Compute mean reward per timestep under the optimal policy
-    # print("Mean reward per timestep under optimal policy: {}".format(mean_reward_per_timestep))
+    if verbose:
+        print(f'Average reward: {np.mean(rewards):.3f}')
+
+    return np.mean(rewards)
 
 if __name__ == '__main__':
-    experiment()
+    experiment(verbose=True)
