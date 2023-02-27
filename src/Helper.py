@@ -15,20 +15,18 @@ class LearningCurvePlot:
         if title is not None:
             self.ax.set_title(title)
         
-    def add_curve(self, y: np.ndarray, id: int, label: Optional[str] = None) -> None:
+    def add_curve(self, y: np.ndarray, label: Optional[str] = None) -> None:
         ''' y: vector of average reward results
         label: string to appear as label in plot legend '''
         if label is not None:
-            self.ax.plot(y, color=f'C{id}', label=label)
+            self.ax.plot(y, label=label)
         else:
             self.ax.plot(y)
     
     def set_ylim(self, lower: float, upper: float) -> None:
-        self.ax.set_ylim([lower,upper])
+        self.ax.set_ylim([lower, upper])
 
-    def add_hline(self, height: float, label: str, id: int = None) -> None:
-        if id is not None:
-            self.ax.axhline(height, ls = '.', alpha = 0.5, c = f'C{id}')
+    def add_hline(self, height: float, label: str) -> None:
         self.ax.axhline(height, ls = '--', c = 'k', label = label)
 
     def save(self, name: str = 'test.png') -> None:
