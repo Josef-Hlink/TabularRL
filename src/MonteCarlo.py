@@ -1,94 +1,54 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import time
 from typing import Optional
 import numpy as np
 from Environment import StochasticWindyGridworld
-from Helper import softmax, argmax
+from Agent import Agent
 
 
-class MonteCarloAgent:
-
-    def __init__(self, n_states, n_actions, learning_rate, gamma):
-        self.n_states = n_states
-        self.n_actions = n_actions
-        self.learning_rate = learning_rate
-        self.gamma = gamma
-        self.Q_sa = np.zeros((n_states,n_actions))
-        
-    def select_action(
-        self,
-        s: int,
-        policy: str = 'egreedy',
-        epsilon: Optional[float] = None,
-        temp: Optional[float] = None
-        ) -> int:
-        
-        if policy == 'egreedy':
-            if epsilon is None:
-                raise ValueError('Provide an epsilon to use egreedy policy')
-            a = self.select_egreedy_action(s, epsilon)
-        elif policy == 'softmax':
-            if temp is None:
-                raise ValueError('Provide a temperature to use softmax policy')
-            a = self.select_softmax_action(s, temp)
-        else:
-            raise ValueError('Unknown policy, please use egreedy or softmax')
-
-        return a
-        
-    def select_egreedy_action(
-        self,
-        s: int,
-        epsilon: float
-        ) -> int:
-        ''' Returns an action according to the epsilon-greedy policy '''
-        greedy_a = argmax(self.Q_sa[s])
-        if np.random.uniform() < epsilon:
-            explore_a = np.random.randint(0, self.n_actions)
-            while explore_a == greedy_a:
-                explore_a = np.random.randint(0, self.n_actions)
-            return explore_a
-        return greedy_a
-    
-    def select_softmax_action(
-        self,
-        s: int,
-        temp: float
-        ) -> int:
-        ''' Returns an action according to the softmax policy '''
-        return np.random.choice(self.n_actions, p=softmax(self.Q_sa[s], temp))
+class MonteCarloAgent(Agent):
         
     def update(
         self,
-        states: list,
-        actions: list,
-        rewards: list,
+        states: list[int],
+        actions: list[int],
+        rewards: list[float],
         ) -> None:
         ''' states is a list of states observed in the episode, of length T_ep + 1 (last state is appended)
         actions is a list of actions observed in the episode, of length T_ep
         rewards is a list of rewards observed in the episode, of length T_ep
         done indicates whether the final s in states is was a terminal state '''
         assert len(states) == len(actions) + 1 and len(actions) == len(rewards)
+        states.pop()
         G = 0
-        for t in range(len(rewards)-1, -1, -1):
-            G = self.gamma * G + rewards[t]
-            self.Q_sa[states[t]][actions[t]] += self.learning_rate * (G - self.Q_sa[states[t]][actions[t]])
+        for s, a, r in zip(states[::-1], actions[::-1], rewards[::-1]):
+            G = self.gamma * G + r
+            self.Q[s][a] += self.learning_rate * (G - self.Q[s][a])
         return
 
-def monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma, 
-                   policy='egreedy', epsilon=None, temp=None, plot=True):
+def monte_carlo(
+    n_timesteps: int,
+    max_episode_length: int,
+    learning_rate: float,
+    gamma: float,
+    policy: str = 'egreedy',
+    epsilon: Optional[float] = None,
+    temp: Optional[float] = None
+    ) -> np.ndarray:
     ''' runs a single repetition of an MC rl agent
     Return: rewards, a vector with the observed rewards at each timestep ''' 
     
     env = StochasticWindyGridworld(initialize_model=False)
     pi = MonteCarloAgent(env.n_states, env.n_actions, learning_rate, gamma)
-    rewards = []
+    rewards = np.zeros(n_timesteps)
 
     for t in range(n_timesteps):
         s = env.reset()
         states, actions, rewards_ep = [s], [], []
-        for t_ep in range(max_episode_length):
+        # playout
+        for _ in range(max_episode_length):
             a = pi.select_action(s, policy, epsilon, temp)
             actions.append(a)
             s, r, done = env.step(a)
@@ -97,7 +57,7 @@ def monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma,
             if done:
                 break
         pi.update(states, actions, rewards_ep)
-        rewards.append(sum(rewards_ep))
+        rewards[t] = np.sum(rewards_ep)
 
     return rewards 
     
@@ -115,9 +75,14 @@ def test():
     # Plotting parameters
     plot = True
 
+    start = time.time()
+
     rewards = monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma, 
                    policy, epsilon, temp, plot)
-    print("Obtained rewards: {}".format(rewards))  
+
+    print(f'Average reward: {np.mean(rewards)}')
+
+    print(f'Time taken: {time.time() - start:.2f} seconds')
             
 if __name__ == '__main__':
     test()

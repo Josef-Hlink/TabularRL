@@ -86,30 +86,30 @@ class StochasticWindyGridworld:
 
     def render(
         self,
-        Q_sa: Optional[np.ndarray] = None,
+        Q: Optional[np.ndarray] = None,
         plot_optimal_policy: bool = False,
         step_pause: float = 0.001
         ) -> None:
         ''' Plot the environment 
-        if Q_sa is provided, it will also plot the Q(s,a) values for each action in each state
+        if Q is provided, it will also plot the Q(s,a) values for each action in each state
         if plot_optimal_policy=True, it will additionally add an arrow in each state to indicate the greedy action '''
         # Initialize figure
         if self.fig == None:
             self._initialize_plot()
             
         # Add Q-values to plot
-        if Q_sa is not None:
+        if Q is not None:
             # Initialize labels
             if self.Q_labels is None:
                 self._initialize_Q_labels()
             # Set correct values of labels
             for state in range(self.n_states):
                 for action in range(self.n_actions):
-                    self.Q_labels[state][action].set_text(np.round(Q_sa[state,action],1))
+                    self.Q_labels[state][action].set_text(np.round(Q[state,action],1))
 
         # Add arrows of optimal policy
-        if plot_optimal_policy and Q_sa is not None:
-            self._plot_arrows(Q_sa)
+        if plot_optimal_policy and Q is not None:
+            self._plot_arrows(Q)
             
         # Update agent location
         self.agent_circle.center = self.agent_location+0.5
@@ -220,14 +220,14 @@ class StochasticWindyGridworld:
                 next_label = self.ax.text(plot_location[0],plot_location[1]+0.03,0.0,fontsize=8)
                 self.Q_labels[state].append(next_label)
 
-    def _plot_arrows(self, Q_sa) -> None:
+    def _plot_arrows(self, Q) -> None:
         if self.arrows is not None: 
             for arrow in self.arrows:
                 arrow.remove() # Clear all previous arrows
         self.arrows=[]
         for state in range(self.n_states):
             plot_location = np.array(self._state_to_location(state)) + 0.5
-            max_actions = full_argmax(Q_sa[state])
+            max_actions = full_argmax(Q[state])
             for max_action in max_actions:
                 new_arrow = arrow = Arrow(plot_location[0],plot_location[1],self.action_effects[max_action][0]*0.2,
                                           self.action_effects[max_action][1]*0.2, width=0.05,color='k')
@@ -246,7 +246,7 @@ def test():
     # Initialize environment and Q-array
     env = StochasticWindyGridworld()
     s = env.reset()
-    Q_sa = np.zeros((env.n_states,env.n_actions)) # Q-value array of flat zeros
+    Q = np.zeros((env.n_states,env.n_actions)) # Q-value array of flat zeros
 
     # Test
     for t in range(n_test_steps):
@@ -254,7 +254,7 @@ def test():
         s_next,r,done = env.step(a) # execute action in the environment
         p_sas,r_sas = env.model(s,a)
         print("State {}, Action {}, Reward {}, Next state {}, Done {}, p(s'|s,a) {}, r(s,a,s') {}".format(s,a,r,s_next,done,p_sas,r_sas))
-        env.render(Q_sa=Q_sa,plot_optimal_policy=False,step_pause=step_pause) # display the environment
+        env.render(Q=Q,plot_optimal_policy=False,step_pause=step_pause) # display the environment
         if done: 
             s = env.reset()
         else: 

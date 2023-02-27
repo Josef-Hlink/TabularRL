@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from functools import lru_cache
 import numpy as np
 from Environment import StochasticWindyGridworld
 from Helper import argmax
@@ -19,11 +18,11 @@ class QValueIterationAgent:
         self.n_states = n_states
         self.n_actions = n_actions
         self.gamma = gamma
-        self.Q_sa = np.zeros((n_states, n_actions))
+        self.Q = np.zeros((n_states, n_actions))
         
     def select_action(self, s: int) -> int:
         ''' Returns the greedy best action in state s ''' 
-        return argmax(self.Q_sa[s])
+        return argmax(self.Q[s])
     
     def update(
         self,
@@ -32,11 +31,11 @@ class QValueIterationAgent:
         p_sas: np.ndarray,
         r_sas: np.ndarray
         ) -> None:
-        ''' Function updates Q(s, a) using p_sas and r_sas '''
-        Q_sa_copy = self.Q_sa.copy()
-        self.Q_sa[s,a] = 0
+        ''' Update Q(s, a) using p_sas and r_sas '''
+        Q_copy = self.Q.copy()
+        self.Q[s,a] = 0
         for s_ in range(self.n_states):
-            self.Q_sa[s,a] += p_sas[s,a,s_] * (r_sas[s,a,s_] + self.gamma * np.max(Q_sa_copy[s_]))
+            self.Q[s,a] += p_sas[s,a,s_] * (r_sas[s,a,s_] + self.gamma * np.max(Q_copy[s_]))
         return None
     
 def Q_value_iteration(
@@ -54,22 +53,20 @@ def Q_value_iteration(
         delta = 0
         for s in range(env.n_states):
             for a in range(env.n_actions):
-                x = QVIagent.Q_sa[s, a]
+                x = QVIagent.Q[s, a]
                 QVIagent.update(s, a, env.p_sas, env.r_sas)
-                delta = max(delta, abs(x - QVIagent.Q_sa[s, a]))
+                delta = max(delta, abs(x - QVIagent.Q[s, a]))
         if delta < threshold or i > 1000:
             if verbose:
                 print('Converged')
             break
         if verbose:
-            env.render(Q_sa = QVIagent.Q_sa, plot_optimal_policy = True, step_pause = 0.2)
             print(f'i = {i}, Δ = {delta:.3f}')
         i += 1
     
      
     return QVIagent
 
-@lru_cache
 def experiment(verbose: bool = False):
     np.random.seed(42)
     gamma = 1.0

@@ -1,87 +1,49 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from typing import Optional
 import numpy as np
 from Environment import StochasticWindyGridworld
-from Helper import softmax, argmax
+from Agent import Agent
 
 import time
 
 
-class NstepQLearningAgent:
+class NstepQLearningAgent(Agent):
 
-    def __init__(self, n_states, n_actions, learning_rate, gamma, n):
-        self.n_states = n_states
-        self.n_actions = n_actions
-        self.learning_rate = learning_rate
-        self.gamma = gamma
+    def __init__(
+        self,
+        n_states: int,
+        n_actions: int,
+        learning_rate: float,
+        gamma: float,
+        n: int
+        ) -> None:
+        super().__init__(n_states, n_actions, learning_rate, gamma)
         self.n = n
-        self.Q_sa = np.zeros((n_states,n_actions))
-        
-    def select_action(
-        self,
-        s: int,
-        policy: str = 'egreedy',
-        epsilon: Optional[float] = None,
-        temp: Optional[float] = None
-        ) -> int:
-        
-        if policy == 'egreedy':
-            if epsilon is None:
-                raise ValueError('Provide an epsilon to use egreedy policy')
-            a = self.select_egreedy_action(s, epsilon)
-        elif policy == 'softmax':
-            if temp is None:
-                raise ValueError('Provide a temperature to use softmax policy')
-            a = self.select_softmax_action(s, temp)
-        else:
-            raise ValueError('Unknown policy, please use egreedy or softmax')
-
-        return a
-        
-    def select_egreedy_action(
-        self,
-        s: int,
-        epsilon: float
-        ) -> int:
-        ''' Returns an action according to the epsilon-greedy policy '''
-        greedy_a = argmax(self.Q_sa[s])
-        if np.random.uniform() < epsilon:
-            explore_a = np.random.randint(0, self.n_actions)
-            while explore_a == greedy_a:
-                explore_a = np.random.randint(0, self.n_actions)
-            return explore_a
-        return greedy_a
-    
-    def select_softmax_action(
-        self,
-        s: int,
-        temp: float
-        ) -> int:
-        ''' Returns an action according to the softmax policy '''
-        return np.random.choice(self.n_actions, p=softmax(self.Q_sa[s], temp))
+        self.discount_array = np.array([self.gamma**i for i in range(self.n)])
         
     def update(
         self,
-        states: list,
-        actions: list,
-        rewards: list,
+        states: list[int],
+        actions: list[int],
+        rewards: list[float],
         done: bool
         ) -> None:
         ''' states is a list of states observed in the episode, of length T_ep + 1 (last state is appended)
         actions is a list of actions observed in the episode, of length T_ep
         rewards is a list of rewards observed in the episode, of length T_ep
         done indicates whether the final s in states is was a terminal state '''
-        for t in range(len(states)-1):
-            # len(states) = T_ep + 1
-            m = min(self.n, len(states)-1-t)
-            # if state t+m is terminal, then G_t = R_t+1 + ... + R_t+m
-            if done and t+m == len(states)-1:
-                G = np.sum([self.gamma**i * rewards[t+i] for i in range(m)])
-            else:
-                G = np.sum([self.gamma**i * rewards[t+i] for i in range(m)]) + self.gamma**m * np.max(self.Q_sa[states[t+m]])
-            self.Q_sa[states[t], actions[t]] += self.learning_rate * (G - self.Q_sa[states[t], actions[t]])
+        T_ep = len(states) - 1
+        rewards = np.array(rewards)
+        for t in range(T_ep):
+            m = min(self.n, T_ep-t)
+            future_rewards = rewards[t:t+m]
+            # target is the sum of (potentially discounted) rewards from t+1 to t+m
+            G = np.sum(self.discount_array[:m] * future_rewards)
+            if not (done and t+m == len(states)-1):
+                # target should also include the Q-learning estimate of the value of the state at time t+m
+                G += self.gamma**m * np.max(self.Q[states[t+m]])
+            self.Q[states[t], actions[t]] += self.learning_rate * (G - self.Q[states[t], actions[t]])
         return
 
 def n_step_Q(
@@ -92,7 +54,6 @@ def n_step_Q(
     policy: str = 'egreedy',
     epsilon: float = None,
     temp: float = None,
-    plot: bool = True,
     n: int = 5
     ) -> np.ndarray:
     ''' runs a single repetition of an MC rl agent
@@ -105,7 +66,8 @@ def n_step_Q(
     for t in range(n_timesteps):
         s = env.reset()
         states, actions, rewards_ep = [s], [], []
-        for t_ep in range(max_episode_length):
+        # playout
+        for _ in range(max_episode_length):
             a = pi.select_action(s, policy, epsilon, temp)
             s, r, done = env.step(a)
             states.append(s)
@@ -134,14 +96,14 @@ def test():
     plot = True
 
 
-    s = time.time()
+    start = time.time()
 
     rewards = n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma, 
                    policy, epsilon, temp, plot, n=n)
     
     print(f'Average reward: {np.mean(rewards)}')
 
-    print(f'Time taken: {time.time() - s:.2f} seconds')
+    print(f'Time taken: {time.time() - start:.2f} seconds')
     
 if __name__ == '__main__':
     test()

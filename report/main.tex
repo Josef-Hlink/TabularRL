@@ -18,20 +18,22 @@
 \newcommand{\theHalgorithm}{\arabic{algorithm}}
 
 % Use the following line for the initial blind version submitted for review:
-\usepackage{icml2021}
+% \usepackage{icml2021}
 
 % If accepted, instead use the following line for the camera-ready submission:
-%\usepackage[accepted]{icml2021}
+\usepackage[accepted]{icml2021}
 
 % The \icmltitle you define below is probably too long as a header.
 % Therefore, a short form for the running title is supplied here:
-\icmltitlerunning{Submission and Formatting Instructions for ICML 2021}
+\icmltitlerunning{Tabular RL}
 
 \begin{document}
 
 \twocolumn[
-\icmltitle{Submission and Formatting Instructions for \\
-           International Conference on Machine Learning (ICML 2021)}
+\icmltitle{
+    Reinforcement Learning Assignment 1: \\
+    Tabular Reinforcement Learning
+}
 
 % It is OKAY to include author information, even for blind
 % submissions: the style file will automatically remove it for you
@@ -49,31 +51,17 @@
 \icmlsetsymbol{equal}{*}
 
 \begin{icmlauthorlist}
-\icmlauthor{Aeiau Zzzz}{equal,to}
-\icmlauthor{Bauiu C.~Yyyy}{equal,to,goo}
-\icmlauthor{Cieua Vvvvv}{goo}
-\icmlauthor{Iaesut Saoeu}{ed}
-\icmlauthor{Fiuea Rrrr}{to}
-\icmlauthor{Tateu H.~Yasehe}{ed,to,goo}
-\icmlauthor{Aaoeu Iasoh}{goo}
-\icmlauthor{Buiui Eueu}{ed}
-\icmlauthor{Aeuia Zzzz}{ed}
-\icmlauthor{Bieea C.~Yyyy}{to,goo}
-\icmlauthor{Teoau Xxxx}{ed}
-\icmlauthor{Eee Pppp}{ed}
+\icmlauthor{Josef Hamelink}{LIACS}
 \end{icmlauthorlist}
 
-\icmlaffiliation{to}{Department of Computation, University of Torontoland, Torontoland, Canada}
-\icmlaffiliation{goo}{Googol ShallowMind, New London, Michigan, USA}
-\icmlaffiliation{ed}{School of Computation, University of Edenborrow, Edenborrow, United Kingdom}
+\icmlaffiliation{LIACS}{Leiden Institute of Advanced Computer Science, Leiden University, Leiden, The Netherlands}
 
-\icmlcorrespondingauthor{Cieua Vvvvv}{c.vvvvv@googol.com}
-\icmlcorrespondingauthor{Eee Pppp}{ep@eden.co.uk}
+\icmlcorrespondingauthor{Thomas Moerland}{LIACS}
 
 % You may provide any keywords that you
 % find helpful for describing your paper; these are used to populate
 % the "keywords" metadata in the PDF but will not be shown in the document
-\icmlkeywords{Machine Learning, ICML}
+\icmlkeywords{Reinforcement Learning, RL}
 
 \vskip 0.3in
 ]
@@ -86,23 +74,24 @@
 % The \icmlEqualContribution command is standard text for equal contribution.
 % Remove it (just {}) if you do not need this facility.
 
-%\printAffiliationsAndNotice{}  % leave blank if no need to mention equal contribution
-\printAffiliationsAndNotice{\icmlEqualContribution} % otherwise use the standard text.
+\printAffiliationsAndNotice{}  % leave blank if no need to mention equal contribution
+% \printAffiliationsAndNotice{\icmlEqualContribution} % otherwise use the standard text.
 
 \begin{abstract}
-This document provides a basic paper template and submission guidelines.
-Abstracts must be a single paragraph, ideally between 4--6 sentences long.
-Gross violations will trigger corrections at the camera-ready phase.
+This paper is a submission to the first assignment of the Reinforcement Learning course at Leiden University.
+The basic concepts of reinforcement learning are introduced in a tabular setting.
+Dynamic programming is also used to highlight its differences with reinforcement learning.
+The problem used to illustrate the concepts in this assignment is a stochastic variation of the \textit{windy gridworld} problem \cite{SuttonBarto2018}.
 \end{abstract}
 
-\section{Electronic Submission}
+\section{Introduction}
 \label{submission}
 
-Submission to ICML 2021 will be entirely electronic, via a web site
-(not email). Information about the submission process and \LaTeX\ templates
-are available on the conference web site at:
+Source code can be found on GitHub at
 \begin{center}
-\textbf{\texttt{http://icml.cc/}}
+\footnotesize{\textbf{\texttt{\url{
+    https://github.com/Josef-Hlink/TabularRL
+}}}}
 \end{center}
 
 The guidelines below will be enforced for initial submissions and
@@ -542,7 +531,7 @@ support.
 % references without citing it in the main text, use \nocite
 \nocite{langley00}
 
-\bibliography{example_paper}
+\bibliography{main}
 \bibliographystyle{icml2021}
 
 
