@@ -72,10 +72,9 @@ def experiment(verbose: bool = False):
     gamma = 1.0
     threshold = 0.001
     env = StochasticWindyGridworld(initialize_model = True)
-    if verbose:
-        env.render()
     QVIagent = Q_value_iteration(env, gamma, threshold, verbose)
     rewards = []
+    env.render()
     
     # View optimal policy
     done = False
@@ -83,6 +82,7 @@ def experiment(verbose: bool = False):
     while not done:
         a = QVIagent.select_action(s)
         s_next, r, done = env.step(a)
+        env.render(Q=QVIagent.Q,plot_optimal_policy=True,step_pause=3)
         rewards.append(r)
         s = s_next
 
