@@ -23,13 +23,14 @@ def sarsa(
     policy: str = 'egreedy',
     epsilon: Optional[float] = None,
     temp: Optional[float] = None
-    ) -> np.ndarray:
+    ) -> tuple[np.ndarray, np.ndarray]:
     ''' runs a single repetition of SARSA
     Return: rewards, a vector with the observed rewards at each timestep ''' 
 
     env = StochasticWindyGridworld(initialize_model=False)
     pi = SarsaAgent(env.n_states, env.n_actions, learning_rate, gamma)
     rewards = np.zeros(n_timesteps)
+    greedy_rewards = np.zeros(n_timesteps // 500)
 
     s = env.reset()
     a = pi.select_action(s, policy, epsilon, temp)
@@ -42,27 +43,24 @@ def sarsa(
         if done:
             s = env.reset()
             a = pi.select_action(s, policy, epsilon, temp)
+        if t % 500 == 0:
+            dummy_env = StochasticWindyGridworld(initialize_model=False)
+            greedy_rewards[t//500] = pi.run_greedy_episode(dummy_env)
 
-    return rewards 
+    return (rewards, greedy_rewards)
 
 
 def test():
     n_timesteps = 10000
     gamma = 1.0
     learning_rate = 0.1
-
-    # Exploration
     policy = 'egreedy' # 'egreedy' or 'softmax' 
     epsilon = 0.1
     temp = 1.0
-    
-    # Plotting parameters
-    plot = False
-    # plot = True
 
-    rewards = sarsa(n_timesteps, learning_rate, gamma, policy, epsilon, temp, plot)
-    print('Number of times reached goal:', np.sum(rewards == 40))      
-
+    rewards, greedy_rewards = sarsa(n_timesteps, learning_rate, gamma, policy, epsilon, temp)
+    print(f'Number of times reached goal: {np.sum(rewards == 40)}')
+    print(f'Last greedy reward: {greedy_rewards[-1]}')
 
 
 if __name__ == '__main__':

@@ -9,29 +9,38 @@ from scipy.signal import savgol_filter
 class LearningCurvePlot:
 
     def __init__(self, title: Optional[str] = None) -> None:
-        self.fig,self.ax = plt.subplots()
-        self.ax.set_xlabel('Time')
-        self.ax.set_ylabel('Reward')      
+        self.fig, (self.ax1, self.ax2) = plt.subplots(2, 1, figsize = (8, 8))
+        self.fig.supxlabel('Time')
+        self.fig.supylabel('Reward')
         if title is not None:
-            self.ax.set_title(title)
+            self.fig.suptitle(title, fontsize = 16)
         
-    def add_curve(self, y: np.ndarray, label: Optional[str] = None) -> None:
+    def add_curve(self, axid: int, y: np.ndarray, cid: int, x: np.ndarray = None, label: Optional[str] = None) -> None:
         ''' y: vector of average reward results
         label: string to appear as label in plot legend '''
-        if label is not None:
-            self.ax.plot(y, label=label)
-        else:
-            self.ax.plot(y)
+        ax = self.ax1 if axid == 1 else self.ax2
+        if x is None: x = np.arange(len(y))
+        ax.plot(x, y, color = f'C{cid}', alpha = 0.75, label = label)
     
-    def set_ylim(self, lower: float, upper: float) -> None:
-        self.ax.set_ylim([lower, upper])
+    def set_ylim(self, lower1: float, upper1: float, lower2: Optional[float] = None, upper2: Optional[float] = None) -> None:
+        self.ax1.set_ylim([lower1, upper1])
+        if lower2 is not None and upper2 is not None:
+            self.ax2.set_ylim([lower2, upper2])
+        else:
+            self.ax2.set_ylim([lower1, upper1])
 
     def add_hline(self, height: float, label: str) -> None:
-        self.ax.axhline(height, ls = '--', c = 'k', label = label)
+        self.ax1.axhline(height, ls = '--', c = 'k', label = label)
+        self.ax2.axhline(height, ls = '--', c = 'k', label = label)
+
+    def set_titles(self, title1: str, title2: str) -> None:
+        self.ax1.set_title(title1)
+        self.ax2.set_title(title2)
 
     def save(self, name: str = 'test.png') -> None:
         ''' name: string for filename of saved figure '''
-        self.ax.legend()
+        self.ax1.legend()
+        self.fig.tight_layout()
         self.fig.savefig(f'../plots/{name}', dpi = 500)
 
 def smooth(y: np.ndarray, window: int, poly: int = 1) -> np.ndarray:

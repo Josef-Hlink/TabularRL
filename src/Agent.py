@@ -75,8 +75,10 @@ class Agent:
         s = env.reset()
         done = False
         rewards = []
-        while not done:
-            a = self.select_action(s, policy='egreedy', epsilon=0)
+        for _ in range(100):
+            a = argmax(self.Q[s])
             s, r, done = env.step(a)
             rewards.append(r)
+            if done:
+                break
         return np.mean(rewards)

@@ -22,13 +22,15 @@ def q_learning(
     policy: str = 'egreedy',
     epsilon: Optional[float] = None,
     temp: Optional[float] = None
-    ) -> np.ndarray:
+    ) -> tuple[np.ndarray, np.ndarray]:
     ''' runs a single repetition of Q-learning
-    Return: rewards, a vector with the observed rewards at each timestep ''' 
+    Return:
+    - rewards, a vector with the observed rewards at each timestep ''' 
     
     env = StochasticWindyGridworld(initialize_model = False)
     pi = QLearningAgent(env.n_states, env.n_actions, learning_rate, gamma)
     rewards = np.zeros(n_timesteps)
+    greedy_rewards = np.zeros(n_timesteps // 500)
 
     s = env.reset()
     for t in range(n_timesteps):
@@ -39,26 +41,23 @@ def q_learning(
         s = s_
         if done:
             s = env.reset()
-
-    return rewards 
+        if t % 500 == 0:
+            dummy_env = StochasticWindyGridworld(initialize_model = False)
+            greedy_rewards[t//500] = pi.run_greedy_episode(dummy_env)
+    return (rewards, greedy_rewards)
 
 def test():
     
     n_timesteps = 10000
     gamma = 1.0
     learning_rate = 0.1
-
-    # Exploration
     policy = 'egreedy' # 'egreedy' or 'softmax' 
     epsilon = 0.1
     temp = 1.0
-    
-    # Plotting parameters
-    plot = False
-    # plot = True
 
-    rewards = q_learning(n_timesteps, learning_rate, gamma, policy, epsilon, temp, plot)
-    print('Number of times reached goal:', np.sum(rewards == 40))
+    rewards, greedy_rewards = q_learning(n_timesteps, learning_rate, gamma, policy, epsilon, temp)
+    print(f'Number of times reached goal: {np.sum(rewards == 40)}')
+    print(f'Last greedy reward: {greedy_rewards[-1]}')
 
 
 if __name__ == '__main__':

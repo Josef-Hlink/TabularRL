@@ -20,7 +20,7 @@ class NstepQLearningAgent(Agent):
         ) -> None:
         super().__init__(n_states, n_actions, learning_rate, gamma)
         self.n = n
-        self.discount_array = np.array([self.gamma**i for i in range(self.n)])
+        self.discount_array = self.gamma ** np.arange(0, self.n)
         
     def update(
         self,
@@ -37,10 +37,9 @@ class NstepQLearningAgent(Agent):
         rewards = np.array(rewards)
         for t in range(T_ep):
             m = min(self.n, T_ep-t)
-            future_rewards = rewards[t:t+m]
             # target is the sum of (potentially discounted) rewards from t+1 to t+m
-            G = np.sum(self.discount_array[:m] * future_rewards)
-            if not (done and t+m == len(states)-1):
+            G = np.sum(self.discount_array[:m] * rewards[t:t+m])
+            if not (done and t+m == T_ep):
                 # target should also include the Q-learning estimate of the value of the state at time t+m
                 G += self.gamma**m * np.max(self.Q[states[t+m]])
             self.Q[states[t], actions[t]] += self.learning_rate * (G - self.Q[states[t], actions[t]])
@@ -62,6 +61,7 @@ def n_step_Q(
     env = StochasticWindyGridworld(initialize_model=False)
     pi = NstepQLearningAgent(env.n_states, env.n_actions, learning_rate, gamma, n)
     rewards = np.zeros(n_timesteps)
+    greedy_rewards = np.zeros(n_timesteps // 500)
 
     for t in range(n_timesteps):
         s = env.reset()
@@ -77,8 +77,12 @@ def n_step_Q(
                 break
         pi.update(states, actions, rewards_ep, done)
         rewards[t] = np.sum(rewards_ep)
+
+        if t % 500 == 0:
+            dummy_env = StochasticWindyGridworld(initialize_model=False)
+            greedy_rewards[t//500] = pi.run_greedy_episode(dummy_env)
     
-    return rewards 
+    return (rewards, greedy_rewards)
 
 def test():
     n_timesteps = 10000
@@ -86,24 +90,17 @@ def test():
     gamma = 1.0
     learning_rate = 0.1
     n = 5
-    
-    # Exploration
     policy = 'egreedy' # 'egreedy' or 'softmax' 
     epsilon = 0.1
     temp = 1.0
     
-    # Plotting parameters
-    plot = True
-
-
     start = time.time()
-
-    rewards = n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma, 
-                   policy, epsilon, temp, plot, n=n)
+    rewards, greedy_rewards = n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma, policy, epsilon, temp, n)
     
     print(f'Average reward: {np.mean(rewards)}')
+    print(f'Last greedy reward: {greedy_rewards[-1]}')
+    print(f'Time elapsed: {time.time() - start:.2f} seconds')
 
-    print(f'Time taken: {time.time() - start:.2f} seconds')
-    
+
 if __name__ == '__main__':
     test()
