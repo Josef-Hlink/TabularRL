@@ -53,7 +53,8 @@ def n_step_Q(
     policy: str = 'egreedy',
     epsilon: float = None,
     temp: float = None,
-    n: int = 5
+    n: int = 5,
+    plot: bool = False
     ) -> np.ndarray:
     ''' runs a single repetition of an MC rl agent
     Return: rewards, a vector with the observed rewards at each timestep ''' 
@@ -76,26 +77,29 @@ def n_step_Q(
             if done:
                 break
         pi.update(states, actions, rewards_ep, done)
-        rewards[t] = np.sum(rewards_ep)
+        rewards[t] = np.mean(rewards_ep)
 
         if t % 500 == 0:
             dummy_env = StochasticWindyGridworld(initialize_model=False)
             greedy_rewards[t//500] = pi.run_greedy_episode(dummy_env)
     
+    if plot:
+        pi.plot_policy(f'{n}-step after {n_timesteps} episodes', f'../plots/NS/NS{n}.png')
     return (rewards, greedy_rewards)
 
 def test():
-    n_timesteps = 10000
+    n_timesteps = 5000
     max_episode_length = 100
     gamma = 1.0
     learning_rate = 0.1
-    n = 5
+    n = 30
     policy = 'egreedy' # 'egreedy' or 'softmax' 
     epsilon = 0.1
     temp = 1.0
+    plot = True
     
     start = time.time()
-    rewards, greedy_rewards = n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma, policy, epsilon, temp, n)
+    rewards, greedy_rewards = n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma, policy, epsilon, temp, n, plot)
     
     print(f'Average reward: {np.mean(rewards)}')
     print(f'Last greedy reward: {greedy_rewards[-1]}')

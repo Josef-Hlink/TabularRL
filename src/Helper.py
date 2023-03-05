@@ -22,12 +22,9 @@ class LearningCurvePlot:
         if x is None: x = np.arange(len(y))
         ax.plot(x, y, color = f'C{cid}', alpha = 0.75, label = label)
     
-    def set_ylim(self, lower1: float, upper1: float, lower2: Optional[float] = None, upper2: Optional[float] = None) -> None:
-        self.ax1.set_ylim([lower1, upper1])
-        if lower2 is not None and upper2 is not None:
-            self.ax2.set_ylim([lower2, upper2])
-        else:
-            self.ax2.set_ylim([lower1, upper1])
+    def set_ylim(self, lower: float, upper: float) -> None:
+        self.ax1.set_ylim([lower, upper])
+        self.ax2.set_ylim([lower, upper])
 
     def add_hline(self, height: float, label: str) -> None:
         self.ax1.axhline(height, ls = '--', c = 'k', label = label)

@@ -52,9 +52,13 @@ def average_over_repetitions(
     print(f'{signature}\ntime: {time.strftime("%M:%S", time.gmtime(time.time() - start))}')
     
     learning_curve = np.mean(reward_results, axis = 0)
-    learning_curve = smooth(learning_curve, smoothing_window)
+    if n_timesteps < 50_000:
+        sw1, sw2 = 51, 3
+    else:
+        sw1, sw2 = 501, 31
+    learning_curve = smooth(learning_curve, sw1)
     eval_curve = np.mean(greedy_reward_results, axis = 0)
-    eval_curve = smooth(eval_curve, 11)
+    eval_curve = smooth(eval_curve, sw2)
     return learning_curve, eval_curve
 
 def experiment():
@@ -120,14 +124,14 @@ def experiment():
     print('\033[1m' + 'Back-up depth' + '\033[0m')
     plot = LearningCurvePlot(title = 'Back-up: depth')    
     for i, n in enumerate([1, 3, 10, 30]):
-        lc, ec = run_repetitions(backup='nstep', n=n)
+        lc, ec = run_repetitions(backup='nstep', n=n, n_timesteps=5000)
         plot.add_curve(axid=1, y=lc, cid=i, label=rf'{n}-step Q-learning')
-        plot.add_curve(axid=2, x=greedy_eval_range, y=ec, cid=i)
-    lc, ec = run_repetitions(backup='mc')
+        plot.add_curve(axid=2, x=greedy_eval_range[:10], y=ec, cid=i)
+    lc, ec = run_repetitions(backup='mc', n_timesteps=5000)
     plot.add_curve(axid=1, y=lc, cid=4, label='Monte Carlo')
-    plot.add_curve(axid=2, x=greedy_eval_range, y=ec, cid=4)
+    plot.add_curve(axid=2, x=greedy_eval_range[:10], y=ec, cid=4)
     plot.add_hline(r_avg_opt, label = 'DP optimum')
-    plot.set_ylim(-160, 30, -1.1, 1.5)
+    plot.set_ylim(-1.1, 1.5)
     plot.set_titles('Learning curve', 'Greedy evaluation')
     plot.save('depth.png')
 

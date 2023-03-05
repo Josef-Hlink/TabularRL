@@ -35,7 +35,8 @@ def monte_carlo(
     gamma: float,
     policy: str = 'egreedy',
     epsilon: Optional[float] = None,
-    temp: Optional[float] = None
+    temp: Optional[float] = None,
+    plot: bool = False
     ) -> np.ndarray:
     ''' runs a single repetition of an MC rl agent
     Return: rewards, a vector with the observed rewards at each timestep ''' 
@@ -58,28 +59,31 @@ def monte_carlo(
             if done:
                 break
         pi.update(states, actions, rewards_ep)
-        rewards[t] = np.sum(rewards_ep)
+        rewards[t] = np.mean(rewards_ep)
         if t % 500 == 0:
             dummy_env = StochasticWindyGridworld(initialize_model=False)
             greedy_rewards[t//500] = pi.run_greedy_episode(dummy_env)
 
+    if plot:
+        pi.plot_policy(f'MC after {n_timesteps} episodes', '../plots/MC.png')
     return (rewards, greedy_rewards)
 
 def test():
-    n_timesteps = 1000
+    n_timesteps = 5000
     max_episode_length = 100
     gamma = 1.0
     learning_rate = 0.1
     policy = 'egreedy' # 'egreedy' or 'softmax' 
     epsilon = 0.1
     temp = 1.0
-    start = time.time()
+    plot  = True
 
-    rewards, greedy_rewards = monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma, policy, epsilon, temp)
+    start = time.time()
+    rewards, greedy_rewards = monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma, policy, epsilon, temp, plot)
+    
     print(f'Average reward: {np.mean(rewards)}')
     print(f'Last greedy reward: {greedy_rewards[-1]}')
     print(f'Time taken: {time.time() - start:.2f} seconds')
-
 
 
 if __name__ == '__main__':

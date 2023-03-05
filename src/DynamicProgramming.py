@@ -4,21 +4,10 @@
 import numpy as np
 from Environment import StochasticWindyGridworld
 from Helper import argmax
+from Agent import Agent
 
-class QValueIterationAgent:
+class QValueIterationAgent(Agent):
     ''' Class to store the Q-value iteration solution, perform updates, and select the greedy action '''
-
-    def __init__(
-        self,
-        n_states: int,
-        n_actions: int,
-        gamma: float
-        ) -> None:
-        ''' Initialize the Q-value iteration agent '''
-        self.n_states = n_states
-        self.n_actions = n_actions
-        self.gamma = gamma
-        self.Q = np.zeros((n_states, n_actions))
         
     def select_action(self, s: int) -> int:
         ''' Returns the greedy best action in state s ''' 
@@ -42,11 +31,12 @@ def Q_value_iteration(
     env: StochasticWindyGridworld,
     gamma: float = 1.0,
     threshold: float = 0.001,
-    verbose: bool = False
+    verbose: bool = False,
+    plot: bool = False
     ) -> QValueIterationAgent:
     ''' Runs Q-value iteration. Returns a converged QValueIterationAgent object '''
     
-    QVIagent = QValueIterationAgent(env.n_states, env.n_actions, gamma)    
+    QVIagent = QValueIterationAgent(env.n_states, env.n_actions, learning_rate=None, gamma=gamma)
     
     i = 0
     while True:
@@ -56,22 +46,22 @@ def Q_value_iteration(
                 x = QVIagent.Q[s, a]
                 QVIagent.update(s, a, env.p_sas, env.r_sas)
                 delta = max(delta, abs(x - QVIagent.Q[s, a]))
-        if delta < threshold or i > 1000:
-            if verbose:
-                print('Converged')
-            break
+        if plot:
+            QVIagent.plot_policy(f'DP iteration {i}', f'../plots/DP/DP{i}.png')
         if verbose:
             print(f'i = {i}, Δ = {delta:.3f}')
+        if delta < threshold or i > 1000:
+            break
         i += 1
     
      
     return QVIagent
 
-def experiment(verbose: bool = False):
+def experiment(verbose: bool = False, plot: bool = False) -> float:
     gamma = 1.0
     threshold = 0.001
     env = StochasticWindyGridworld(initialize_model = True)
-    QVIagent = Q_value_iteration(env, gamma, threshold, verbose)
+    QVIagent = Q_value_iteration(env, gamma, threshold, verbose, plot)
     rewards = []
     # env.render()
     
@@ -91,4 +81,4 @@ def experiment(verbose: bool = False):
     return np.mean(rewards)
 
 if __name__ == '__main__':
-    experiment(verbose=True)
+    experiment(verbose=True, plot=True)
