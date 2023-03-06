@@ -4,6 +4,7 @@
 from typing import Optional
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 from Environment import StochasticWindyGridworld
 from Helper import softmax, argmax
 
@@ -54,10 +55,7 @@ class Agent:
         ''' Returns an action according to the epsilon-greedy policy '''
         greedy_a = argmax(self.Q[s])
         if np.random.uniform() < epsilon:
-            explore_a = np.random.randint(0, self.n_actions)
-            while explore_a == greedy_a:
-                explore_a = np.random.randint(0, self.n_actions)
-            return explore_a
+            return np.random.choice([a for a in range(self.n_actions) if a != greedy_a])
         return greedy_a
 
     def select_softmax_action(
@@ -105,35 +103,18 @@ class Agent:
                 # get the greedy action
                 a = greedy_actions[i, j, 0]
                 # get the direction of the arrow
-                if a == 0:
-                    dx, dy = 0, -0.2
-                elif a == 1:
-                    dx, dy = 0.2, 0
-                elif a == 2:
-                    dx, dy = 0, 0.2
-                else:
-                    dx, dy = -0.2, 0
+                dy, dx = [(0, -.2), (.2, 0), (0, .2), (-.2, 0)][a]
                 # plot the arrow
                 ax.arrow(j, i, dx, dy, head_width=0.1, head_length=0.1, fc='k', ec='k')
 
-        # set markings where wind is blowing (red arrow)
-        # columns 3-5 with strength 1, columns 6-7 with strength 2 and column 8 with strength 1
-        ax.plot([2.5, 5.5], [-.5, -.5], 'r', lw=3)
-        ax.plot([2.5, 5.5], [6.5, 6.5], 'r', lw=3)
-        ax.plot([2.5, 2.5], [-.5, 6.5], 'r', lw=3)
-        ax.plot([5.5, 5.5], [-.5, 6.5], 'r', lw=3)
-        
-        ax.plot([5.5, 7.5], [-.5, -.5], 'r', lw=5)
-        ax.plot([5.5, 7.5], [6.5, 6.5], 'r', lw=5)
-        ax.plot([7.5, 7.5], [-.5, 6.5], 'r', lw=5)
-        ax.plot([5.5, 5.5], [-.5, 6.5], 'r', lw=5)
+        # set markings where wind is blowing
+        rect1 = Rectangle((2.5, -0.5), 3, 7, linewidth=3, edgecolor='r', facecolor='none')
+        rect2 = Rectangle((5.5, -0.5), 2, 7, linewidth=5, edgecolor='r', facecolor='none')
+        rect3 = Rectangle((7.5, -0.5), 1, 7, linewidth=3, edgecolor='r', facecolor='none')
+        for rect in [rect1, rect2, rect3]:
+            ax.add_patch(rect)
 
-        ax.plot([7.5, 8.5], [-.5, -.5], 'r', lw=3)
-        ax.plot([7.5, 8.5], [6.5, 6.5], 'r', lw=3)
-        ax.plot([7.5, 7.5], [-.5, 6.5], 'r', lw=3)
-        ax.plot([8.5, 8.5], [-.5, 6.5], 'r', lw=3)
-
-        # set markings where the goal is (green circle)
+        # set mark where the goal is (green circle)
         ax.plot([7], [3], 'go', markersize=50)
 
         ax.set_title(title, fontsize=16)
