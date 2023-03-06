@@ -87,36 +87,44 @@ class Agent:
         Each state is represented by an arrow pointing in the direction of the action with the highest value
         The state is plotted as a 2D representation of the environment with a BW heatmap of the greedy Q-values
         '''
+        fig, ax = plt.subplots(1, 1, figsize=(10, 6))
+        
+        # prepare the Q-value array
         Q_2D = self.Q.reshape(10, 7, self.n_actions)
         Q_2D = np.transpose(Q_2D, (1, 0, 2))
         Q_2D = np.flip(Q_2D, axis=0)
-        # get the greedy action for each state (can be multiple)
-        greedy_actions = np.argmax(Q_2D, axis=2, keepdims=True)
         
-        fig, ax = plt.subplots(1, 1, figsize=(10, 7))
         # plot the heatmap of the greedy Q-values
-        ax.imshow(np.max(Q_2D, axis=2), cmap='gray')
-        
+        greedy_Q: np.ndarray = np.max(Q_2D, axis=2)
+        ax.imshow(greedy_Q, cmap='gray')
+        # add colorbar with correct range of values under the heatmap
+        cbar = ax.figure.colorbar(ax.images[0], ax=ax, location='right', shrink=0.7)
+        cbar.ax.set_ylabel('max($Q(s)$)', rotation=-90, va="bottom", fontsize=14)
+
         # plot the arrows
+        greedy_actions = np.argmax(Q_2D, axis=2, keepdims=True)
         for i in range(7):
             for j in range(10):
                 # get the greedy action
                 a = greedy_actions[i, j, 0]
                 # get the direction of the arrow
-                dy, dx = [(0, -.2), (.2, 0), (0, .2), (-.2, 0)][a]
+                dy, dx = [(-.2, 0), (0, .2), (.2, 0), (0, -.2)][a]
                 # plot the arrow
                 ax.arrow(j, i, dx, dy, head_width=0.1, head_length=0.1, fc='k', ec='k')
 
-        # set markings where wind is blowing
+        # add red borders around where wind is blowing
         rect1 = Rectangle((2.5, -0.5), 3, 7, linewidth=3, edgecolor='r', facecolor='none')
         rect2 = Rectangle((5.5, -0.5), 2, 7, linewidth=5, edgecolor='r', facecolor='none')
         rect3 = Rectangle((7.5, -0.5), 1, 7, linewidth=3, edgecolor='r', facecolor='none')
         for rect in [rect1, rect2, rect3]:
             ax.add_patch(rect)
 
-        # set mark where the goal is (green circle)
-        ax.plot([7], [3], 'go', markersize=50)
+        # add green circle where the goal is
+        ax.plot([7], [3], 'go', markersize=30)
 
+        # finish the plot
+        ax.set_xticks(range(10))
+        ax.set_yticks(range(7))
         ax.set_title(title, fontsize=16)
         fig.tight_layout()
         fig.savefig(filename, dpi=300)

@@ -69,9 +69,10 @@ def experiment(verbose: bool = False, plot: bool = False) -> float:
     done = False
     s = env.reset()
     while not done:
+        if verbose:
+            print(f'V*({np.unravel_index(s, (10, 7))}) = {np.max(QVIagent.Q[s]):.3f}')
         a = QVIagent.select_action(s)
         s_next, r, done = env.step(a)
-        # env.render(Q=QVIagent.Q,plot_optimal_policy=True,step_pause=3)
         rewards.append(r)
         s = s_next
 
@@ -81,4 +82,5 @@ def experiment(verbose: bool = False, plot: bool = False) -> float:
     return np.mean(rewards)
 
 if __name__ == '__main__':
+    np.random.seed(42)
     experiment(verbose=True, plot=True)

@@ -7,6 +7,7 @@
 \usepackage{graphicx}
 \usepackage{subfigure}
 \usepackage{booktabs} % for professional tables
+\usepackage{amsmath}
 
 % hyperref makes hyperlinks in the resulting PDF.
 % If your build breaks (sometimes temporarily if a hyperlink spans a page)
@@ -85,492 +86,473 @@ The problem used to illustrate the concepts in this assignment is a stochastic v
 \end{abstract}
 
 \section{Introduction}
-\label{submission}
+\label{sec:intro}
 
-Source code can be found on GitHub at
-\begin{center}
-\footnotesize{\textbf{\texttt{\url{
-    https://github.com/Josef-Hlink/TabularRL
-}}}}
-\end{center}
+Reinforcement learning (RL) is a subfield of machine learning that focuses on learning to act in an environment.
+The actor is typically called an \textit{agent}.
+The agent's goal is to maximize the expected cumulative reward it receives over time.
+In this assignment, the agents try to achieve this goal by minimizing the number of steps it takes to reach the goal state.
+The agents that have been modelled in this assignment are Q-learning (vanilla and n-step), SARSA, and Monte Carlo.
+To benchmark their performance, a Dynamic Programming (DP) agent is also implemented, which is guaranteed to find the optimal policy.
+All algorithms employ Q-tables, in which an estimate of the expected ``value'' of a state-action pair is stored for all possible state-action pairs.
 
-The guidelines below will be enforced for initial submissions and
-camera-ready copies. Here is a brief summary:
-\begin{itemize}
-\item Submissions must be in PDF\@.
-\item Submitted papers can be up to eight pages long, not including references, plus unlimited space for references. Accepted papers can be up to nine pages long, not including references, to allow authors to address reviewer comments. Any paper exceeding this length will automatically be rejected. 
-\item \textbf{Do not include author information or acknowledgements} in your
-    initial submission.
-\item Your paper should be in \textbf{10 point Times font}.
-\item Make sure your PDF file only uses Type-1 fonts.
-\item Place figure captions \emph{under} the figure (and omit titles from inside
-    the graphic file itself). Place table captions \emph{over} the table.
-\item References must include page numbers whenever possible and be as complete
-    as possible. Place multiple citations in chronological order.
-\item Do not alter the style template; in particular, do not compress the paper
-    format by reducing the vertical spaces.
-\item Keep your abstract brief and self-contained, one paragraph and roughly
-    4--6 sentences. Gross violations will require correction at the
-    camera-ready phase. The title should have content words capitalized.
-\end{itemize}
+\section{Problem description}
+\label{sec:problem}
 
-\subsection{Submitting Papers}
+Because we are interested in the performance of various tabular model-free RL algorithms, a slightly modified version of the \textit{windy gridworld} problem \cite{SuttonBarto2018} suits our purposes.
+The size of an agent's Q-table is $|\mathcal{S}| \times |\mathcal{A}|$, where $|\mathcal{S}|$ is the number of states and $|\mathcal{A}|$ is the number of actions the agent can take in each state.
 
-\textbf{Paper Deadline:} The deadline for paper submission that is
-advertised on the conference website is strict. If your full,
-anonymized, submission does not reach us on time, it will not be
-considered for publication. 
+In the case of this environment (Figure \ref{fig:env}), $|\mathcal{S}| = 7 \times 10 = 70$ and $|\mathcal{A}| = 4$, so the size of the Q-table is $70 \times 4 = 280$.
 
-\textbf{Anonymous Submission:} ICML uses double-blind review: no identifying
-author information may appear on the title page or in the paper
-itself. Section~\ref{author info} gives further details.
-
-\textbf{Simultaneous Submission:} ICML will not accept any paper which,
-at the time of submission, is under review for another conference or
-has already been published. This policy also applies to papers that
-overlap substantially in technical content with conference papers
-under review or previously published. ICML submissions must not be
-submitted to other conferences and journals during ICML's review
-period.
-%Authors may submit to ICML substantially different versions of journal papers
-%that are currently under review by the journal, but not yet accepted
-%at the time of submission.
-Informal publications, such as technical
-reports or papers in workshop proceedings which do not appear in
-print, do not fall under these restrictions.
-
-\medskip
-
-Authors must provide their manuscripts in \textbf{PDF} format.
-Furthermore, please make sure that files contain only embedded Type-1 fonts
-(e.g.,~using the program \texttt{pdffonts} in linux or using
-File/DocumentProperties/Fonts in Acrobat). Other fonts (like Type-3)
-might come from graphics files imported into the document.
-
-Authors using \textbf{Word} must convert their document to PDF\@. Most
-of the latest versions of Word have the facility to do this
-automatically. Submissions will not be accepted in Word format or any
-format other than PDF\@. Really. We're not joking. Don't send Word.
-
-Those who use \textbf{\LaTeX} should avoid including Type-3 fonts.
-Those using \texttt{latex} and \texttt{dvips} may need the following
-two commands:
-
-{\footnotesize
-\begin{verbatim}
-dvips -Ppdf -tletter -G0 -o paper.ps paper.dvi
-ps2pdf paper.ps
-\end{verbatim}}
-It is a zero following the ``-G'', which tells dvips to use
-the config.pdf file. Newer \TeX\ distributions don't always need this
-option.
-
-Using \texttt{pdflatex} rather than \texttt{latex}, often gives better
-results. This program avoids the Type-3 font problem, and supports more
-advanced features in the \texttt{microtype} package.
-
-\textbf{Graphics files} should be a reasonable size, and included from
-an appropriate format. Use vector formats (.eps/.pdf) for plots,
-lossless bitmap formats (.png) for raster graphics with sharp lines, and
-jpeg for photo-like images.
-
-The style file uses the \texttt{hyperref} package to make clickable
-links in documents. If this causes problems for you, add
-\texttt{nohyperref} as one of the options to the \texttt{icml2021}
-usepackage statement.
-
-
-\subsection{Submitting Final Camera-Ready Copy}
-
-The final versions of papers accepted for publication should follow the
-same format and naming convention as initial submissions, except that
-author information (names and affiliations) should be given. See
-Section~\ref{final author} for formatting instructions.
-
-The footnote, ``Preliminary work. Under review by the International
-Conference on Machine Learning (ICML). Do not distribute.'' must be
-modified to ``\textit{Proceedings of the
-$\mathit{38}^{th}$ International Conference on Machine Learning},
-Online, PMLR 139, 2021.
-Copyright 2021 by the author(s).''
-
-For those using the \textbf{\LaTeX} style file, this change (and others) is
-handled automatically by simply changing
-$\mathtt{\backslash usepackage\{icml2021\}}$ to
-$$\mathtt{\backslash usepackage[accepted]\{icml2021\}}$$
-Authors using \textbf{Word} must edit the
-footnote on the first page of the document themselves.
-
-Camera-ready copies should have the title of the paper as running head
-on each page except the first one. The running title consists of a
-single line centered above a horizontal rule which is $1$~point thick.
-The running head should be centered, bold and in $9$~point type. The
-rule should be $10$~points above the main text. For those using the
-\textbf{\LaTeX} style file, the original title is automatically set as running
-head using the \texttt{fancyhdr} package which is included in the ICML
-2021 style file package. In case that the original title exceeds the
-size restrictions, a shorter form can be supplied by using
-
-\verb|\icmltitlerunning{...}|
-
-just before $\mathtt{\backslash begin\{document\}}$.
-Authors using \textbf{Word} must edit the header of the document themselves.
-
-\section{Format of the Paper}
-
-All submissions must follow the specified format.
-
-\subsection{Dimensions}
-
-
-
-
-The text of the paper should be formatted in two columns, with an
-overall width of 6.75~inches, height of 9.0~inches, and 0.25~inches
-between the columns. The left margin should be 0.75~inches and the top
-margin 1.0~inch (2.54~cm). The right and bottom margins will depend on
-whether you print on US letter or A4 paper, but all final versions
-must be produced for US letter size.
-
-The paper body should be set in 10~point type with a vertical spacing
-of 11~points. Please use Times typeface throughout the text.
-
-\subsection{Title}
-
-The paper title should be set in 14~point bold type and centered
-between two horizontal rules that are 1~point thick, with 1.0~inch
-between the top rule and the top edge of the page. Capitalize the
-first letter of content words and put the rest of the title in lower
-case.
-
-\subsection{Author Information for Submission}
-\label{author info}
-
-ICML uses double-blind review, so author information must not appear. If
-you are using \LaTeX\/ and the \texttt{icml2021.sty} file, use
-\verb+\icmlauthor{...}+ to specify authors and \verb+\icmlaffiliation{...}+ to specify affiliations. (Read the TeX code used to produce this document for an example usage.) The author information
-will not be printed unless \texttt{accepted} is passed as an argument to the
-style file.
-Submissions that include the author information will not
-be reviewed.
-
-\subsubsection{Self-Citations}
-
-If you are citing published papers for which you are an author, refer
-to yourself in the third person. In particular, do not use phrases
-that reveal your identity (e.g., ``in previous work \cite{langley00}, we
-have shown \ldots'').
-
-Do not anonymize citations in the reference section. The only exception are manuscripts that are
-not yet published (e.g., under submission). If you choose to refer to
-such unpublished manuscripts \cite{anonymous}, anonymized copies have
-to be submitted
-as Supplementary Material via CMT\@. However, keep in mind that an ICML
-paper should be self contained and should contain sufficient detail
-for the reviewers to evaluate the work. In particular, reviewers are
-not required to look at the Supplementary Material when writing their
-review.
-
-\subsubsection{Camera-Ready Author Information}
-\label{final author}
-
-If a paper is accepted, a final camera-ready copy must be prepared.
-%
-For camera-ready papers, author information should start 0.3~inches below the
-bottom rule surrounding the title. The authors' names should appear in 10~point
-bold type, in a row, separated by white space, and centered. Author names should
-not be broken across lines. Unbolded superscripted numbers, starting 1, should
-be used to refer to affiliations.
-
-Affiliations should be numbered in the order of appearance. A single footnote
-block of text should be used to list all the affiliations. (Academic
-affiliations should list Department, University, City, State/Region, Country.
-Similarly for industrial affiliations.)
-
-Each distinct affiliations should be listed once. If an author has multiple
-affiliations, multiple superscripts should be placed after the name, separated
-by thin spaces. If the authors would like to highlight equal contribution by
-multiple first authors, those authors should have an asterisk placed after their
-name in superscript, and the term ``\textsuperscript{*}Equal contribution"
-should be placed in the footnote block ahead of the list of affiliations. A
-list of corresponding authors and their emails (in the format Full Name
-\textless{}email@domain.com\textgreater{}) can follow the list of affiliations.
-Ideally only one or two names should be listed.
-
-A sample file with author names is included in the ICML2021 style file
-package. Turn on the \texttt{[accepted]} option to the stylefile to
-see the names rendered. All of the guidelines above are implemented
-by the \LaTeX\ style file.
-
-\subsection{Abstract}
-
-The paper abstract should begin in the left column, 0.4~inches below the final
-address. The heading `Abstract' should be centered, bold, and in 11~point type.
-The abstract body should use 10~point type, with a vertical spacing of
-11~points, and should be indented 0.25~inches more than normal on left-hand and
-right-hand margins. Insert 0.4~inches of blank space after the body. Keep your
-abstract brief and self-contained, limiting it to one paragraph and roughly 4--6
-sentences. Gross violations will require correction at the camera-ready phase.
-
-\subsection{Partitioning the Text}
-
-You should organize your paper into sections and paragraphs to help
-readers place a structure on the material and understand its
-contributions.
-
-\subsubsection{Sections and Subsections}
-
-Section headings should be numbered, flush left, and set in 11~pt bold
-type with the content words capitalized. Leave 0.25~inches of space
-before the heading and 0.15~inches after the heading.
-
-Similarly, subsection headings should be numbered, flush left, and set
-in 10~pt bold type with the content words capitalized. Leave
-0.2~inches of space before the heading and 0.13~inches afterward.
-
-Finally, subsubsection headings should be numbered, flush left, and
-set in 10~pt small caps with the content words capitalized. Leave
-0.18~inches of space before the heading and 0.1~inches after the
-heading.
-
-Please use no more than three levels of headings.
-
-\subsubsection{Paragraphs and Footnotes}
-
-Within each section or subsection, you should further partition the
-paper into paragraphs. Do not indent the first line of a given
-paragraph, but insert a blank line between succeeding ones.
-
-You can use footnotes\footnote{Footnotes
-should be complete sentences.} to provide readers with additional
-information about a topic without interrupting the flow of the paper.
-Indicate footnotes with a number in the text where the point is most
-relevant. Place the footnote in 9~point type at the bottom of the
-column in which it appears. Precede the first footnote in a column
-with a horizontal rule of 0.8~inches.\footnote{Multiple footnotes can
-appear in each column, in the same order as they appear in the text,
-but spread them across columns and pages if possible.}
-
-\begin{figure}[ht]
-\vskip 0.2in
-\begin{center}
-\centerline{\includegraphics[width=\columnwidth]{icml_numpapers}}
-\caption{Historical locations and number of accepted papers for International
-Machine Learning Conferences (ICML 1993 -- ICML 2008) and International
-Workshops on Machine Learning (ML 1988 -- ML 1992). At the time this figure was
-produced, the number of accepted papers for ICML 2008 was unknown and instead
-estimated.}
-\label{icml-historical}
-\end{center}
-\vskip -0.2in
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=.6\linewidth]{figs/env.png}
+    \caption{The environment used in this assignment.}
+    \label{fig:env}
 \end{figure}
 
-\subsection{Figures}
+\newcommand{\fnZeroIndex}{\footnote{We begin indexing at 0, so column 3 is the fourth column to the left.}}
 
-You may want to include figures in the paper to illustrate
-your approach and results. Such artwork should be centered,
-legible, and separated from the text. Lines should be dark and at
-least 0.5~points thick for purposes of reproduction, and text should
-not appear on a gray background.
+The agent starts at the square marked with an ``S'' and must reach the square marked with a ``G''.
+The agent can move in all four directions, but the environment is stochastic.
+In columns 3\fnZeroIndex, 4, 5, and 8, there is an 80\% chance that the agent will be blown upwards by one tile, meaning that when moving right from position $(2, 3)$, the agent will probably end up in position $(3, 4)$ instead of $(3, 3)$.
+In columns 6 and 7, the chance is also 80\%, but the agent will be blown upwards by two tiles.
+The agent receives a reward of $+40$ when it reaches the goal state, and a reward of $-1$ for any other tile it visits.
 
-Label all distinct components of each figure. If the figure takes the
-form of a graph, then give a name for each axis and include a legend
-that briefly describes each curve. Do not include a title inside the
-figure; instead, the caption should serve this function.
+The optimal path -- assuming the wind always blows when it matters, i.e. the last two steps -- is shown in Figure \ref{fig:path}.
 
-Number figures sequentially, placing the figure number and caption
-\emph{after} the graphics, with at least 0.1~inches of space before
-the caption and 0.1~inches after it, as in
-Figure~\ref{icml-historical}. The figure caption should be set in
-9~point type and centered unless it runs two or more lines, in which
-case it should be flush left. You may float figures to the top or
-bottom of a column, and you may set wide figures across both columns
-(use the environment \texttt{figure*} in \LaTeX). Always place
-two-column figures at the top or bottom of the page.
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=.6\linewidth]{figs/path.png}
+    \caption{The optimal path to the goal state.}
+    \label{fig:path}
+\end{figure}
 
-\subsection{Algorithms}
+This path gives a total reward of $- 1 \times 16 + 40 = +24$.
+The average reward per timestep equates to $24 / 17 \approx 1.412$.
 
-If you are using \LaTeX, please use the ``algorithm'' and ``algorithmic''
-environments to format pseudocode. These require
-the corresponding stylefiles, algorithm.sty and
-algorithmic.sty, which are supplied with this package.
-Algorithm~\ref{alg:example} shows an example.
+\section{Methods}
+\label{sec:methods}
 
-\begin{algorithm}[tb]
-   \caption{Bubble Sort}
-   \label{alg:example}
-\begin{algorithmic}
-   \STATE {\bfseries Input:} data $x_i$, size $m$
-   \REPEAT
-   \STATE Initialize $noChange = true$.
-   \FOR{$i=1$ {\bfseries to} $m-1$}
-   \IF{$x_i > x_{i+1}$}
-   \STATE Swap $x_i$ and $x_{i+1}$
-   \STATE $noChange = false$
-   \ENDIF
-   \ENDFOR
-   \UNTIL{$noChange$ is $true$}
+\subsection{Dynamic Programming}
+\label{ssec:dp}
+
+The definition of Dynamic Programming (DP) comes down to solving a complex problem by breaking it down into simpler subproblems.
+In the case of RL, the problem is to find the optimal policy $\pi^*$, which is the policy that maximizes the expected cumulative reward.
+In order to solve this, we can use the Bellman equation (\ref{eq:bellmanDP}).
+
+\begin{equation}
+    V^*(s) = \max_{a \in \mathcal{A}} \left( \sum_{s' \in \mathcal{S}} p(s', r | s, a) \left( r + \gamma V^*(s') \right) \right)
+    \label{eq:bellmanDP}
+\end{equation}
+
+Here, $V^*(s)$ is the value of state $s$ under the optimal policy $\pi^*$, $\mathcal{A}$ is the set of actions, $\mathcal{S}$ is the set of states, $p(s', r | s, a)$ is the probability of transitioning from state $s$ to state $s'$ with reward $r$ when taking action $a$, $r$ is the reward, and $\gamma$ is the discount factor.
+The way this equation leads to the optimal policy is by iteratively solving the equation for $V^*(s)$ for all $s \in \mathcal{S}$.
+Concretely, we initialize $V^*(s)$ to $0$ for all $s \in \mathcal{S}$, and sweep over all states until the values converge.
+The optimal policy is then given by the choosing the action that maximizes the value of the next state, as shown in Equation \ref{eq:policyDP}.
+
+\begin{equation}
+    \pi^*(s) = \arg \max_{a \in \mathcal{A}} \left( \sum_{s' \in \mathcal{S}} p(s', r | s, a) \left( r + \gamma V^*(s') \right) \right)
+    \label{eq:policyDP}
+\end{equation}
+
+It is important to note that in order to take this approach, the transition probabilities must be known to the agent.
+This is what differentiates DP from the Reinforcement Learning algorithms that will be discussed in the upcoming sections.
+
+\subsection{Reinforcement Learning}
+\label{ssec:rl}
+
+In general, Reinforcement Learning (RL) is a framework for learning an optimal policy $\pi^*$ through direct interaction with the environment.
+Experience is gathered by taking actions in the environment based on a behaviour policy $\pi_b$.
+For all intents and purposes, $\pi_b$ can be just called $\pi$ in this section, as no distinction will be made between the behaviour policy and the target policy.
+The policies that will be discussed in this section are the $\varepsilon$-greedy and Boltzmann (softmax) policies.
+
+\subsubsection*{$\varepsilon$-greedy policy}
+\label{sssec:egreedy}
+
+The $\varepsilon$-greedy policy is a simple policy that chooses the action with the highest Q-value with probability $1 - \varepsilon$, and chooses a random (exploratory) action with probability $\varepsilon$.
+
+\newpage
+
+There are two main schools of thought on how to interpret $\varepsilon$.
+One is that it is the probability of choosing a random action, and the other is that it is the probability of choosing a strictly exploratory action.
+In this assignment, the latter interpretation will be used.
+The policy is described in Equation \ref{eq:egreedy}.
+
+\begin{equation}
+    \pi(a | s) = \begin{cases}
+        1 - \varepsilon & \text{if } a = \arg \max_{a' \in \mathcal{A}} Q(s, a') \\
+        \frac{\varepsilon}{|\mathcal{A}|-1} & \text{otherwise}
+    \end{cases}
+\label{eq:egreedy}
+\end{equation}
+
+It is clear that a high value for $\varepsilon$ will lead to more exploration, while lower values will lead to a more greedy policy.
+
+\subsubsection*{Boltzmann (softmax) policy}
+\label{sssec:softmax}
+
+The Boltzmann policy is a more sophisticated policy that assigns probabilities to each action based on the Q-values of the actions.
+The probability of choosing an action is proportional to the Q-value of that action.
+The policy is described in Equation \ref{eq:softmax}.
+
+\begin{equation}
+    \pi(a | s) = \frac{\exp \left( \frac{Q(s, a)}{\tau} \right)}{\sum_{a' \in \mathcal{A}} \exp \left( \frac{Q(s, a')}{\tau} \right)}
+    \label{eq:softmax}
+\end{equation}
+
+The parameter $\tau$ is called the temperature, and it controls the amount of exploration.
+High values of $\tau$ will lead to more exploration, as the probabilities will be more uniform.
+As $\tau \to \infty$, $\pi(a | s)$ will approach $|\mathcal{A}|^{-1} \: \forall \: a \in \mathcal{A}$.
+Conversely, as $\tau \to 0$, $\pi(a | s)$ will approach $1$ for the action with the highest Q-value, and $0$ for all other actions.
+
+\subsubsection*{Q-learning}
+\label{sssec:ql}
+
+Q-learning is one of the most easy to implement and reason about RL algorithms.
+Similarly to DP, Q-learning uses the highest value of the next state to update the value of the current state.
+However, because it is model-free, it does not require the transition probabilities to be known to the agent.
+Instead, it estimates a target value ($G_t$) for the current state-action pair, which is based on the optimistic estimate of the value of the next state-action pair.
+It then updates the Q-value of the current state-action pair towards this target value.
+This is shown in Equations \ref{eq:targetQ} and \ref{eq:updateQ}.
+
+\begin{equation}
+    G_t = r_t + \gamma \cdot \max_{a' \in \mathcal{A}} Q(s_{t+1}, a')
+    \label{eq:targetQ}
+\end{equation}
+
+\begin{equation}
+    Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \cdot \left( G_t - Q(s_t, a_t) \right)
+    \label{eq:updateQ}
+\end{equation}
+
+The implementation is shown in Algorithm \ref{alg:qlearning}.
+
+\begin{algorithm}[htbp]
+    \caption{Q-learning}
+    \label{alg:qlearning}
+ \begin{algorithmic}
+    \STATE {\bfseries Input:} $budget, environment$
+    \STATE initialize $Q(s, a)$ to $0$ for all $s \in \mathcal{S}$ and $a \in \mathcal{A}$
+    \STATE $s \gets s_0$
+    \REPEAT
+    \STATE sample action $a$ using Equation \ref{eq:egreedy} or \ref{eq:softmax}
+    \STATE take action $a$ in environment to get $r$ and $s'$
+    \STATE update $Q(s, a)$ with Equations \ref{eq:targetQ} and \ref{eq:updateQ}
+    \IF{$s'$ is terminal}
+        \STATE $s \gets s_0$
+    \ELSE
+        \STATE $s \gets s'$
+    \ENDIF
+    \STATE $budget \gets budget - 1$
+    \UNTIL{$budget = 0$}
 \end{algorithmic}
 \end{algorithm}
 
-\subsection{Tables}
+\subsubsection*{SARSA}
+\label{sssec:sarsa}
 
-You may also want to include tables that summarize material. Like
-figures, these should be centered, legible, and numbered consecutively.
-However, place the title \emph{above} the table with at least
-0.1~inches of space before the title and the same after it, as in
-Table~\ref{sample-table}. The table title should be set in 9~point
-type and centered unless it runs two or more lines, in which case it
-should be flush left.
+SARSA is a model-free RL algorithm that is very similar to Q-learning.
+The main difference is that it uses the action that is sampled from the behaviour policy to update the Q-value of the current state-action pair instead of using the action with the highest Q-value.
+One way to frame this is that SARSA uses its own behaviour policy to update the Q-value of the current state-action pair, while Q-learning uses the greedy policy for this.
+SARSA's update rule is identical to that of Q-learning (Equation \ref{eq:updateQ}), but the target value is calculated with Equation \ref{eq:targetS}:
 
-% Note use of \abovespace and \belowspace to get reasonable spacing
-% above and below tabular lines.
+\begin{equation}
+    G_t = r_t + \gamma \cdot Q(s_{t+1}, a_{t+1})
+    \label{eq:targetS}
+\end{equation}
 
-\begin{table}[t]
-\caption{Classification accuracies for naive Bayes and flexible
-Bayes on various data sets.}
-\label{sample-table}
-\vskip 0.15in
+The implementation is shown in Algorithm \ref{alg:sarsa}.
+
+\begin{algorithm}[htbp]
+    \caption{SARSA}
+    \label{alg:sarsa}
+ \begin{algorithmic}
+    \STATE {\bfseries Input:} $budget, environment$
+    \STATE initialize $Q(s, a)$ to $0$ for all $s \in \mathcal{S}$ and $a \in \mathcal{A}$
+    \STATE $s \gets s_0$
+    \STATE sample action $a$ using Equation \ref{eq:egreedy} or \ref{eq:softmax}
+    \REPEAT
+    \STATE take action $a$ in environment to get $r$ and $s'$
+    \STATE sample action $a'$ using Equation \ref{eq:egreedy} or \ref{eq:softmax}
+    \STATE update $Q(s, a)$ with Equations \ref{eq:targetS} and \ref{eq:updateQ}
+    \IF{$s'$ is terminal}
+        \STATE $s \gets s_0$
+        \STATE sample action $a$ using Equation \ref{eq:egreedy} or \ref{eq:softmax}
+    \ELSE
+        \STATE $s \gets s'$
+        \STATE $a \gets a'$
+    \ENDIF
+    \STATE $budget \gets budget - 1$
+    \UNTIL{$budget = 0$}
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection*{$n$-step Q-learning}
+\label{sssec:nstep}
+
+$n$-step Q-learning is another temporal difference algorithm that is similar to Q-learning, but it uses the $n$-step return instead of the one-step return.
+The $n$-step return is the sum of the (discounted) rewards over the next $n$ steps, plus a bootstrapped value of the $n$\textsuperscript{th} state-action pair.
+The bootstrapped value is the Q-value of the $n$\textsuperscript{th} state-action pair, which is estimated using the greedy policy (hence the name Q-learning).
+This means that $n$-step Q-learning is actually both on-policy and off-policy, assuming that the behaviour policy is not greedy.
+The target value is calculated with either Equation \ref{eq:targetN1} or Equation \ref{eq:targetN2}, based on whether the episode ends before the $n$\textsuperscript{th} step or not.
+If the episode ends before $n$ is reached, bootstrapping is not possible, so the second term can be omitted.
+
+\begin{equation}
+    G_t = \sum_{i=0}^{n-1} \left[ \gamma^i \cdot r_{t+i} \right] + \gamma^n \cdot \max_{a' \in \mathcal{A}} Q(s_{t+n}, a')
+    \label{eq:targetN1}
+\end{equation}
+
+\begin{equation}
+    G_t = \sum_{i=0}^{n-1} \left[ \gamma^i \cdot r_{t+i} \right]
+    \label{eq:targetN2}
+\end{equation}
+
+Again, the same tabular update rule (Equation \ref{eq:updateQ}) is used to update the Q-value of the current state-action pair.
+The implementation is shown in Algorithm \ref{alg:nstep}.
+It should be noted that the lines between what constitutes a single step and what constitutes a single episode became very blurry at this point in the assignment.
+
+\subsubsection*{Monte Carlo}
+\label{sssec:montecarlo}
+
+Monte Carlo methods are a class of algorithms that rely on the idea of ``full'' playouts.
+This means that the agent plays out an entire episode, and then uses the rewards received during the episode to update the Q-values retroactively.
+This quite similar to the $n$-step Q-learning algorithm, but instead of using the $n$-step return, the full return is used.
+This full return can be thought of as the $n$-step return (Equation \ref{eq:targetN2}) with $n = \infty$.
+The implementation of Monte Carlo for this assignment is shown in Algorithm \ref{alg:montecarlo}.
+
+\newpage
+
+\begin{algorithm}[htbp]
+    \caption{$n$-step Q-learning}
+    \label{alg:nstep}
+ \begin{algorithmic}
+    \STATE {\bfseries Input:} $budget, environment, n, max\_episode\_length$
+    \STATE initialize $Q(s, a)$ to $0$ for all $s \in \mathcal{S}$ and $a \in \mathcal{A}$
+    \REPEAT
+    \STATE $s \gets s_0$
+    \FOR{$t = 0 \dots max\_episode\_length$}
+        \STATE sample action $a_t$ using Equation \ref{eq:egreedy} or \ref{eq:softmax}
+        \STATE take action $a_t$ in environment to get $r_t$ and $s_{t+1}$
+        \IF{$s_{t+1}$ is terminal}
+            \STATE \textbf{break}
+        \ENDIF
+    \ENDFOR
+    \STATE $episode\_length \gets t+1$
+    \FOR{$t = 0 \dots \min(n, episode\_length)$}
+        \STATE $m \gets \min(n, episode\_length - t)$
+        \IF{$t + m < episode\_length$}
+            \STATE update $Q(s_t, a_t)$ with Equation \ref{eq:targetN1} \\ (with bootstrapping)
+        \ELSE
+            \STATE update $Q(s_t, a_t)$ with Equation \ref{eq:targetN2} \\ (no bootstrapping)
+        \ENDIF
+    \ENDFOR
+    \STATE $budget \gets budget - 1$
+    \UNTIL{$budget = 0$}
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[htbp]
+    \caption{Monte Carlo}
+    \label{alg:montecarlo}
+ \begin{algorithmic}
+    \STATE {\bfseries Input:} $budget, environment, max\_episode\_length$
+    \STATE initialize $Q(s, a)$ to $0$ for all $s \in \mathcal{S}$ and $a \in \mathcal{A}$
+    \REPEAT
+    \STATE $s \gets s_0$
+    \FOR{$t = 0 \dots max\_episode\_length$}
+        \STATE sample action $a_t$ using Equation \ref{eq:egreedy} or \ref{eq:softmax}
+        \STATE take action $a_t$ in environment to get $r_t$ and $s_{t+1}$
+        \IF{$s_{t+1}$ is terminal}
+            \STATE \textbf{break}
+        \ENDIF
+    \ENDFOR
+    \STATE $episode\_length \gets t+1$
+    \FOR{$t = 0 \dots episode\_length$}
+        \STATE update $Q(s_t, a_t)$ with Equation \ref{eq:targetN2} ($n = \infty$)
+    \ENDFOR
+    \STATE $budget \gets budget - 1$
+    \UNTIL{$budget = 0$}
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Experimental setup}
+\label{sssec:setup}
+
+The experiments were done with a small set of hyperparameters, because I believe the main focus of this assignment to be getting a feel for the different algorithms, rather than actually finding cool results.
+In places where specific hyperparameters are omitted, the default values used are:
+
 \begin{center}
-\begin{small}
-\begin{sc}
-\begin{tabular}{lcccr}
-\toprule
-Data set & Naive & Flexible & Better? \\
-\midrule
-Breast    & 95.9$\pm$ 0.2& 96.7$\pm$ 0.2& $\surd$ \\
-Cleveland & 83.3$\pm$ 0.6& 80.0$\pm$ 0.6& $\times$\\
-Glass2    & 61.9$\pm$ 1.4& 83.8$\pm$ 0.7& $\surd$ \\
-Credit    & 74.8$\pm$ 0.5& 78.3$\pm$ 0.6&         \\
-Horse     & 73.3$\pm$ 0.9& 69.7$\pm$ 1.0& $\times$\\
-Meta      & 67.1$\pm$ 0.6& 76.5$\pm$ 0.5& $\surd$ \\
-Pima      & 75.1$\pm$ 0.6& 73.9$\pm$ 0.5&         \\
-Vehicle   & 44.9$\pm$ 0.6& 61.5$\pm$ 0.4& $\surd$ \\
-\bottomrule
-\end{tabular}
-\end{sc}
-\end{small}
+    \begin{tabular}{|c|c|}
+        \toprule
+        parameter & value \\
+        \midrule
+        $\alpha$ & 0.25 \\
+        $\gamma$ & 1.0 \\
+        $\varepsilon$ & 0.1 \\
+        $max\_episode\_length$ & 150 \\
+        \bottomrule
+    \end{tabular}
 \end{center}
-\vskip -0.1in
-\end{table}
 
-Tables contain textual material, whereas figures contain graphical material.
-Specify the contents of each row and column in the table's topmost
-row. Again, you may float tables to a column's top or bottom, and set
-wide tables across both columns. Place two-column tables at the
-top or bottom of the page.
+The following experiments have been run:
 
-\subsection{Citations and References}
+\begin{itemize}
+    \item Q-learning with $\epsilon$-greedy vs softmax policies:
+    \begin{itemize}
+        \item $\epsilon$-greedy with $\epsilon \in \{0.02, 0.1, 0.3\}$.
+        \item softmax with $\tau \in \{0.01, 0.1, 1\}$.
+    \end{itemize}
+    \item Q-learning vs. SARSA:
+    \begin{itemize}
+        \item $\alpha \in \{0.02, 0.1, 0.4\}$.
+    \end{itemize}
+    \item $n$-step Q-learning with $n \in \{1, 3, 10, 30\}$ vs. Monte Carlo.
+\end{itemize}
 
-Please use APA reference format regardless of your formatter
-or word processor. If you rely on the \LaTeX\/ bibliographic
-facility, use \texttt{natbib.sty} and \texttt{icml2021.bst}
-included in the style-file package to obtain this format.
-
-Citations within the text should include the authors' last names and
-year. If the authors' names are included in the sentence, place only
-the year in parentheses, for example when referencing Arthur Samuel's
-pioneering work \yrcite{Samuel59}. Otherwise place the entire
-reference in parentheses with the authors and year separated by a
-comma \cite{Samuel59}. List multiple references separated by
-semicolons \cite{kearns89,Samuel59,mitchell80}. Use the `et~al.'
-construct only for citations with three or more authors or after
-listing all authors to a publication in an earlier reference \cite{MachineLearningI}.
-
-Authors should cite their own work in the third person
-in the initial version of their paper submitted for blind review.
-Please refer to Section~\ref{author info} for detailed instructions on how to
-cite your own papers.
-
-Use an unnumbered first-level section heading for the references, and use a
-hanging indent style, with the first line of the reference flush against the
-left margin and subsequent lines indented by 10 points. The references at the
-end of this document give examples for journal articles \cite{Samuel59},
-conference publications \cite{langley00}, book chapters \cite{Newell81}, books
-\cite{DudaHart2nd}, edited volumes \cite{MachineLearningI}, technical reports
-\cite{mitchell80}, and dissertations \cite{kearns89}.
-
-Alphabetize references by the surnames of the first authors, with
-single author entries preceding multiple author entries. Order
-references for the same authors by year of publication, with the
-earliest first. Make sure that each reference includes all relevant
-information (e.g., page numbers).
-
-Please put some effort into making references complete, presentable, and
-consistent. If using bibtex, please protect capital letters of names and
-abbreviations in titles, for example, use \{B\}ayesian or \{L\}ipschitz
-in your .bib file.
-
-\section*{Software and Data}
-
-If a paper is accepted, we strongly encourage the publication of software and data with the
-camera-ready version of the paper whenever appropriate. This can be
-done by including a URL in the camera-ready copy. However, \textbf{do not}
-include URLs that reveal your institution or identity in your
-submission for review. Instead, provide an anonymous URL or upload
-the material as ``Supplementary Material'' into the CMT reviewing
-system. Note that reviewers are not required to look at this material
-when writing their review.
-
-% Acknowledgements should only appear in the accepted version.
-\section*{Acknowledgements}
-
-\textbf{Do not} include acknowledgements in the initial version of
-the paper submitted for blind review.
-
-If a paper is accepted, the final camera-ready version can (and
-probably should) include acknowledgements. In this case, please
-place such acknowledgements in an unnumbered section at the
-end of the paper. Typically, this will include thanks to reviewers
-who gave useful comments, to colleagues who contributed to the ideas,
-and to funding agencies and corporate sponsors that provided financial
-support.
+The rewards are always averaged over $50$ independent runs, and the learning curves are smoothed to make the figures more interpretable.
+For all RL agents, a greedy evaluation run was done after each $500$ timesteps to get a more complete picture of the performance.
 
 
-% In the unusual situation where you want a paper to appear in the
-% references without citing it in the main text, use \nocite
-\nocite{langley00}
+\section{Results}
+\label{sec:results}
+
+\subsection{Dynamic Programming}
+\label{ssec:resdp}
+
+In order to provide a baseline for the RL algorithms, we compute the optimal policy using dynamic programming with Q-value iteration.
+The optimal average reward as described in Section \ref{sec:problem} is successfully reached following convergence of the algorithm.
+This can be seen in Figure \ref{fig:dp17}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=.9\linewidth]{figs/dp17.png}
+    \caption{Policy after $17$ iterations of dynamic programming.}
+    \label{fig:dp17}
+\end{figure}
+
+We see that all arrows in Figure \ref{fig:path} (the optimal path) are also present in Figure \ref{fig:dp17}, which is a good sign that the dynamic programming algorithm has found the optimal policy.
+Of course, there is a probability that no wind blows for the first five consecutive steps, which would make the optimal result in an average reward of $(6 \times -1 + 40) / 7 \approx 5.14$.
+The chance of this occurring however is $0.2^5 = 3.2 \cdot 10^{-4}$, which is negligible.
+We can appreciate that the dynamic programming algorithm is able to find the optimal policy accounting for all possible wind interactions.
+
+If we take a look at the process (Figures \ref{fig:dp0} \& \ref{fig:dp7}), we can see that the first values to be updated with any significance are the ones that are close to the goal state, and this information propagates backwards towards the initial state.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=.9\linewidth]{figs/DP0.png}
+    \caption{Dynamic Programming after the $0$\textsuperscript{th} iteration.}
+    \label{fig:dp0}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=.9\linewidth]{figs/DP7.png}
+    \caption{Dynamic Programming after the $7$\textsuperscript{th} iteration.}
+    \label{fig:dp7}
+\end{figure}
+
+Computing $V^*(s_0)$ can be done by summing the rewards of all possible paths from $s_0$ to the goal state, weighted by the probability of each path.
+Doing this manually is tedious, so I printed $V^*(s)$ for all $s \in \mathrm{optimal\ path}$, and $V^*(s_0)$ turned out to be $\pm 23.312$.
+Something that stands out is that for all $(s, a, s')$ pairs where the transition probability is $1$, $\Delta(V^*(s'), V^*(s)) = -1$, i.e. the reward for landing in that non-terminal state.
+
+Changing the location of the goal state to $(6, 2)$ results in a very different policy, where the agent does not cross the windy columns, but instead tries to stick to the lower side of the grid.
+The optimal average reward is then even lower, but the path is less stable, as the wind has more of an impact on how fast the agent manages to reach the goal.
+
+\subsection{Exploration}
+\label{ssec:resexpl}
+
+The first experiment was to compare the performance of $\epsilon$-greedy and softmax policies.
+For simplicity's sake, only Q-learning was used.
+The results are shown in Figure \ref{fig:exploration}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figs/exploration.png}
+    \caption{Performance of $\varepsilon$-greedy and softmax policies with Q-learning.}
+    \label{fig:exploration}
+\end{figure}
+
+When looking at the learning curves, two ``losers'' are immediately apparent: $\varepsilon = 0.3$ and $\tau = 1.0$; the exploratory settings.
+The agent with $\varepsilon = 0.3$ is forced to take random actions too often, even when it has already learned a decent policy.
+The softmax agent with $\tau = 1.0$ is not nearly as bad, but it does take a little longer to converge than the other four agents, which seem to be very similar.
+
+If we shift our focus to the greedy evaluation curves however, a very different picture emerges.
+The $\varepsilon = 0.3$ agent is actually the best performing agent, and the softmax agent with $\tau = 0.01$ is the worst.
+This makes sense, because the $\varepsilon = 0.3$ agent is forced to explore more, and thus has a better idea of what actions are worthwhile, even when the environment blows it off its course.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figs/QL.png}
+    \caption{Policy learned by Q-learning with $\varepsilon, \alpha = 0.1$.}
+    \label{fig:policyQ}
+\end{figure}
+
+As can be seen in Figure \ref{fig:policyQ}, the resulting policy is quite similar to the DP one, but it is a bit more noisy.
+
+\subsection{On-Policy vs. Off-Policy}
+\label{ssec:resonoff}
+
+The next experiment was to compare the performance of Q-learning and SARSA.
+The results are shown in Figure \ref{fig:onoff}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figs/on_off_policy.png}
+    \caption{Performance of Q-learning and SARSA.}
+    \label{fig:onoff}
+\end{figure}
+
+In general, Q-learning seems to be performing better than SARSA with the same hyperparameters, but the difference is not significant when looking at the learning curves alone.
+This is to be expected, because the two algorithms are very similar, and the only difference is that SARSA uses its own policy to choose the next action in the update rule, whereas Q-learning uses the greedy policy.
+The most notable observation to be made is that a learning rate of $0.02$ is not reasonable for either algorithm, as both their learning curves as well as their greedy evaluation curves are extremely slow to converge.
+Personally, Q-learning with $\alpha = 0.4$ is my favorite; it leaves its SARSA counterpart in the dust when it comes to the greedy evaluation curves.
+
+\subsection{$\mathbf{n}$-step and Monte Carlo}
+\label{ssec:resnm}
+
+In the final experiment we compare the performance of $n$-step and Monte Carlo methods.
+The results are shown in Figure \ref{fig:nm}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figs/depth.png}
+    \caption{Performance of $n$-step and Monte Carlo methods.}
+    \label{fig:nm}
+\end{figure}
+
+The $n$-step methods seem to be performing better than the Monte Carlo methods.
+This is because sadly, $n$-step methods are not viable for this problem, and Monte Carlo is basically $n$-step with $n = \infty$.
+My intuition is that this is due to the fact that these methods are not robust against stochasticity, and the wind in this problem is quite noisy.
+There is a very clear trend in both the learning curves and the greedy evaluation curves, where the $n$-step methods are performing better the lower the value of $n$, with $n = 1$ being the best performing method.
+
+\newpage
+
+In order to illustrate how embarrassing the performance of these $n$-step methods is this problem, the resulting policy after a very generous budget (algorithm has converged) is shown in Figure \ref{fig:policyn}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figs/MC.png}
+    \caption{Policy learned by Monte Carlo.}
+    \label{fig:policyn}
+\end{figure}
+
+\newpage
+
+\section{Conclusion and discussion}
+\label{sec:concdisc}
+
+In this report, we have discussed the implementation of several reinforcement learning algorithms and compared their performance on the windy gridworld problem.
+We have also shown that Dynamic Programming is the best choice of algorithm for this problem.
+Of course, Reinforcement Learning should not be discounted, as it is a very powerful tool for learning from experience, and it can be used to solve problems that are not solvable by Dynamic Programming, e.g. problems where no model of the environment is available.
+It should also be noted that both DP and RL suffer from the curse of dimensionality, but RL has a trick up its sleeve; it can employ neural networks to approximate the value function, which is a very powerful tool for solving problems with a very large (or even continuous) state space.
+
+When deciding between $\varepsilon$-greedy and softmax policies, I personally lean more towards $\varepsilon$-greedy for this problem, as it is easier to reason about, and it is also (ever-so-slightly) more computationally efficient.
+
+It was disappointing to see that the $n$-step methods performed so poorly, but I think that this is due to the fact that the problem is not well suited for these methods, and that they are not as robust against stochasticity as their single step counterparts.
+I do however think that it was a good idea to include them in the report, as it shows that it is not always a good idea to simply throw more compute at a problem.
 
 \bibliography{main}
 \bibliographystyle{icml2021}
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% DELETE THIS PART. DO NOT PLACE CONTENT AFTER THE REFERENCES!
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\appendix
-\section{Do \emph{not} have an appendix here}
-
-\textbf{\emph{Do not put content after the references.}}
-%
-Put anything that you might normally include after the references in a separate
-supplementary file.
-
-We recommend that you build supplementary material in a separate document.
-If you must create one PDF and cut it up, please be careful to use a tool that
-doesn't alter the margins, and that doesn't aggressively rewrite the PDF file.
-pdftk usually works fine. 
-
-\textbf{Please do not use Apple's preview to cut off supplementary material.} In
-previous years it has altered margins, and created headaches at the camera-ready
-stage. 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
 \end{document}
-
-
-% This document was modified from the file originally made available by
-% Pat Langley and Andrea Danyluk for ICML-2K. This version was created
-% by Iain Murray in 2018, and modified by Alexandre Bouchard in
-% 2019 and 2021. Previous contributors include Dan Roy, Lise Getoor and Tobias
-% Scheffer, which was slightly modified from the 2010 version by
-% Thorsten Joachims & Johannes Fuernkranz, slightly modified from the
-% 2009 version by Kiri Wagstaff and Sam Roweis's 2008 version, which is
-% slightly modified from Prasad Tadepalli's 2007 version which is a
-% lightly changed version of the previous year's version by Andrew
-% Moore, which was in turn edited from those of Kristian Kersting and
-% Codrina Lauth. Alex Smola contributed to the algorithmic style files.
